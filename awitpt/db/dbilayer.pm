@@ -20,7 +20,7 @@
 
 
 
-## @class awit::dbilayer
+## @class awit::db::dbilayer
 # Database independant layer module. This module encapsulates the DBI
 # module and provides us with some tweaked functionality
 package awitpt::db::dbilayer;

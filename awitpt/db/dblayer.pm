@@ -19,7 +19,7 @@
 
 
 
-## @class awitpt::dblayer
+## @class awitpt::db::dblayer
 # Database layer module which makes life a bit esier
 package awitpt::db::dblayer;
 
@@ -52,7 +52,7 @@ use POSIX qw( strftime );
 use Date::Parse;
 use DateTime;
 
-use awitpt::dbilayer;
+use awitpt::db::dbilayer;
 
 
 # Database handle
