@@ -114,7 +114,7 @@ sub Init
 
 
 	# Check if we created
-	my $dbh = cbp::dbilayer->new($dbconfig->{'DSN'},$dbconfig->{'Username'},$dbconfig->{'Password'},
+	my $dbh = awitpt::db::dbilayer->new($dbconfig->{'DSN'},$dbconfig->{'Username'},$dbconfig->{'Password'},
 			$dbconfig->{'TablePrefix'});
 	return undef if (!defined($dbh));
 

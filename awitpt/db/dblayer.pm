@@ -372,20 +372,20 @@ sub DBSelectSearch
 		# Check it is a hash
 		if (ref($search) ne "HASH") {
 			setError("Parameter 'search' is not a hashtable");
-			return (undef,ERR_PARAM);
+			return (undef,-1);
 		}
 		# Check if we need to filter
 		if (defined($search->{'Filter'})) {
 			# We need filters in order to use filtering
 			if (!defined($filters)) {
 				setError("Parameter 'search' element 'Filter' requires 'filters' to be defined");
-				return (undef,ERR_PARAM);
+				return (undef,-1);
 			}
 
 			# Check type of Filter
 			if (ref($search->{'Filter'}) ne "ARRAY") {
 				setError("Parameter 'search' element 'Filter' is of invalid type, it must be an ARRAY'");
-				return (undef,ERR_PARAM);
+				return (undef,-1);
 			}
 
 			# Loop with filters
@@ -397,16 +397,16 @@ sub DBSelectSearch
 				# Check if field is in our allowed filters
 				if (!defined($filters->{$field})) {
 					setError("Parameter 'search' element 'Filter' has invalid field item '$field' according to 'filters'");
-					return (undef,ERR_PARAM);
+					return (undef,-1);
 				}
 				# Check data
 				if (!defined($data->{'type'})) {
 					setError("Parameter 'search' element 'Filter' requires field data element 'type' for field '$field'");
-					return (undef,ERR_PARAM);
+					return (undef,-1);
 				}
 				if (!defined($data->{'value'})) {
 					setError("Parameter 'search' element 'Filter' requires field data element 'value' for field '$field'");
-					return (undef,ERR_PARAM);
+					return (undef,-1);
 				}
 
 				# match =, LIKE, IN (
@@ -427,7 +427,7 @@ sub DBSelectSearch
 					# The comparison type must be defined
 					if (!defined($data->{'comparison'})) {
 						setError("Parameter 'search' element 'Filter' requires field data element 'comparison' for date field '$field'");
-						return (undef,ERR_PARAM);
+						return (undef,-1);
 					}
 
 					# Check comparison type
@@ -464,7 +464,7 @@ sub DBSelectSearch
 					# The comparison type must be defined
 					if (!defined($data->{'comparison'})) {
 						setError("Parameter 'search' element 'Filter' requires field data element 'comparison' for numeric field '$field'");
-						return (undef,ERR_PARAM);
+						return (undef,-1);
 					}
 
 					# Check comparison type
@@ -509,7 +509,7 @@ sub DBSelectSearch
 			# Check if Start is valid
 			if ($search->{'Start'} < 0) {
 				setError("Parameter 'search' element 'Start' invalid value '".$search->{'Start'}."'");
-				return (undef,ERR_PARAM);
+				return (undef,-1);
 			}
 
 			$sqlOffset = sprintf("OFFSET %i",$search->{'Start'});
@@ -520,7 +520,7 @@ sub DBSelectSearch
 			# Check if Limit is valid
 			if ($search->{'Limit'} < 1) {
 				setError("Parameter 'search' element 'Limit' invalid value '".$search->{'Limit'}."'");
-				return (undef,ERR_PARAM);
+				return (undef,-1);
 			}
 
 			$sqlLimit = sprintf("LIMIT %i",$search->{'Limit'});
@@ -531,13 +531,13 @@ sub DBSelectSearch
 			# We need sorts in order to use sorting
 			if (!defined($sorts)) {
 				setError("Parameter 'search' element 'Filter' requires 'filters' to be defined");
-				return (undef,ERR_PARAM);
+				return (undef,-1);
 			}
 
 			# Check if sort is defined
 			if (!defined($sorts->{$search->{'Sort'}})) {
 				setError("Parameter 'search' element 'Sort' invalid item '".$search->{'Sort'}."' according to 'sorts'");
-				return (undef,ERR_PARAM);
+				return (undef,-1);
 			}
 
 			# Build ORDER By
@@ -555,7 +555,7 @@ sub DBSelectSearch
 
 				} else {
 					setError("Parameter 'search' element 'SortDirection' invalid value '".$search->{'SortDirection'}."'");
-					return (undef,ERR_PARAM);
+					return (undef,-1);
 				}
 			}
 		}
