@@ -55,7 +55,7 @@ sub post_configure
 	if (!defined($server->{'timeout'})) {
 		$server->{'timeout'} = 30;
 	}
-	
+
 	# Set constants
 	$server->{'proto'} = "TCP";
 
@@ -155,7 +155,7 @@ sub get_request
 		return;
 	}
 
-	# Init	
+	# Init
 	$self->reason("");
 	my $buf = $self->{'_rbuf'};
 	$buf = "" unless defined $buf;
@@ -216,7 +216,7 @@ sub get_request
 	if ($self->proto_ge("HTTP/1.0")) {
 		# we expect to find some headers
 		my($key, $val);
-	
+
 		while ($buf =~ s/^([^\012]*)\012//) {
 			$_ = $1;
 			s/\015$//;
@@ -394,7 +394,7 @@ sub proto_lt
 sub _http_version
 {
 	my ($self,$version) = @_;
-	
+
 	return 0 unless ($version =~ m,^(?:HTTP/)?(\d+)\.(\d+)$,i);
 	return ($1 * 1000 + $2);
 }
@@ -438,7 +438,7 @@ sub send_basic_header
 	return if $self->antique_client;
 	$self->send_status_line(@_);
 	printf(STDOUT 'Date: %s%s',time2str(time), CRLF);
-	printf(STDOUT 'Server: %s%s', $self->{'daemon'}->{'_product_tokens'}, CRLF) if ($self->{'daemon'}->{'_product_tokens'}); 
+	printf(STDOUT 'Server: %s%s', $self->{'daemon'}->{'_product_tokens'}, CRLF) if ($self->{'daemon'}->{'_product_tokens'});
 }
 
 
@@ -549,7 +549,7 @@ sub send_file_response
 	} elsif (-f _) {
 		# plain file
 		local(*F);
-		sysopen(F, $file, 0) or 
+		sysopen(F, $file, 0) or
 			return $self->send_error(RC_FORBIDDEN);
 		binmode(F);
 		my($ct,$ce) = guess_media_type($file);
