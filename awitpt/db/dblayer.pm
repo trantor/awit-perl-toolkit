@@ -114,8 +114,7 @@ sub setHandle
 # @return DBI statement handle, undef on error
 sub DBSelect
 {
-	my ($query,@params) = shift;
-
+	my ($query,@params) = @_;
 
 	my $table_prefix = $dbh->table_prefix();
 
