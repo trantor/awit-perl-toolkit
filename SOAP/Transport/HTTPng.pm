@@ -449,11 +449,16 @@ sub send_response
 	if (!ref $res) {
 		$res ||= RC_OK;
 		$res = HTTP::Response->new($res, @_);
+	# Make sure anything we have, has no soapserver header
+	} else {
+		$res->remove_header('soapserver');
 	}
+
 	# Set SoapServer header
 	if ($self->{'daemon'}->{'_product_tokens'}) {
-		$res->headers->header('SoapServer',$self->{'daemon'}->{'_product_tokens'});
+		$res->headers->header('Server',$self->{'daemon'}->{'_product_tokens'});
 	}
+
 	my $content = $res->content;
 	my $chunked;
 	unless ($self->antique_client) {
