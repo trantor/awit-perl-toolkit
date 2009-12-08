@@ -86,6 +86,88 @@ sub new
 }
 
 
+# Check for a valid ipv6/ipv4 address
+sub is_valid
+{
+	my $ip = shift;
+
+
+	# Check if defined
+	if (!defined($ip)) {
+		return 0;
+	}
+
+	# Check for valid IPv4 address
+	if ($ip =~ /^(\d{1,3})(?:\.(\d{1,3})(?:\.(\d{1,3})(?:\.(\d{1,3}))?)?)?(?:\/(\d{1,2}))?$/) {
+
+		# Check octets are within limits
+		foreach ($1,$2,$3,$4) {
+			if (defined($_)) {
+				if ($_ > 255 || $_ < 0) {
+					return 0;
+				}
+			}
+		}
+
+		# Check bitmask is within limits
+		if (defined($5)) {
+			if ($5 > 32 || $5 < 1) {
+				return 0;
+			}
+		}
+
+	# Check for valid IPv6 address
+	} elsif ($ip =~ /:/) {
+
+		# Pull off and check bitmask
+		if ($ip =~ s/\/(\d{1,3})$//g) {
+			if ($1 > 128 || $1 < 1) {
+				return 0;
+			}
+		}
+
+		# Check for illegal characters
+		if (!($ip =~ /^[a-f\d:]+$/i)) {
+			return 0;
+		}
+
+		# Does the IP address have more than one '::' pattern ?
+		my $count;
+		while ($ip =~ /::/g) {
+			$count++;
+		}
+		if ($count > 1) {
+			return 0;
+		}
+
+		# Count octets
+		my $n = ($ip =~ tr/:/:/);
+		if (!($n > 0 and $n < 8)) {
+			return 0;
+		}
+
+		# Check octets
+		foreach (split /:/, $ip) {
+
+			# Empty octet ?
+			next if ($_ eq '');
+
+			# Normal v6 octet ?
+			next if (/^[a-f\d]{1,4}$/i);
+
+			return 0;
+		}
+
+	# Do not recognise
+	} else {
+		return 0;
+	}
+
+
+	return 1;
+}
+
+
 # Clone an object
 sub copy
 {
