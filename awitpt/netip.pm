@@ -1,4 +1,4 @@
-# network IP Address Handling
+# Network IP Address Handling
 # Copyright (C) 2009, AllWorldIT
 # Copyright (C) 2008, LinuxRulz
 # 
@@ -60,6 +60,12 @@ sub new
 {
 	my ($type,$ip) = @_;
 
+
+	# Make sure IP is defined
+	if (!defined($ip)) {
+		setError("IP address not defined");
+	}
+
 	my $self = {};
 
 	# Guess ip version
@@ -68,7 +74,7 @@ sub new
 	} elsif (($ip =~ /\./) || ($ip =~ /^\d{1,3}(\/\d{1,2})?$/)) {
 		$self->{'ip_version'} = 4;
 	} else {
-		setError("Failed to guess ip version");
+		setError("Failed to guess IP address version");
 		return undef;
 	}
 
@@ -78,11 +84,157 @@ sub new
 	bless($self,$type);
 
 	# Clean the raw IP
-	if (!$self->clean_ip()) {
+	if (!$self->_clean_ip()) {
 		return undef;
 	}
 
 	return $self;
+}
+
+
+# Clone an object
+sub copy
+{
+	my $self = shift;
+	my %params = @_;
+
+	my $clone = bless({
+		'ip_version' => $self->{'ip_version'},
+		'ip' => $self->{'ip'},
+		'cidr' => defined($params{'cidr'}) ? $params{'cidr'} : $self->{'cidr'}
+	}, ref($self));
+
+	return $clone;
+}
+
+
+# Convert to binary
+sub to_bin
+{
+	my $self = shift;
+
+	# We already have it in bin
+	return $self->{'ip_bin'} if ($self->{'ip_bin'});
+
+	# Check how to convert to bin
+	if ($self->{'ip_version'} == 6) {
+		my $cleanIP = $self->{'ip'};
+		$cleanIP =~ s/://g;
+   		$self->{'ip_bin'} = unpack('B128', pack('H32', $cleanIP));
+
+	} elsif ($self->{'ip_version'} == 4) {
+		$self->{'ip_bin'} = unpack('B32', pack('C4C4C4C4', split(/\./, $self->{'ip'})));
+	}
+
+	return $self->{'ip_bin'};
+}
+
+
+# Convert to string
+sub to_str
+{
+	my ($self,$bin) = @_;
+
+
+	# We can only add the cidr suffix if we are working on $self
+	my $suffix = "";
+
+	# Allow us to use a parameter as the bin to convert aswell, if none provided, use self
+	if (!defined($bin)) {
+		$bin = $self->to_bin();
+		$suffix = "/".$self->{'cidr'};
+	}
+
+	# Convert to string format
+	my $resIP;
+	if (length($bin) == 32) {
+		$resIP = join '.', unpack('C4C4C4C4', pack('B32', $bin));
+	} elsif (length($bin) == 128) {
+		$resIP = join(':', unpack('H4H4H4H4H4H4H4H4', pack('B128', $bin)));
+	}
+
+	return $resIP.$suffix;
+}
+
+
+# Convert address to Math::BigInt
+sub to_int
+{
+    my $self = shift;
+
+    # $n is the increment (the numerical value of the bit we about to 'set')
+    my $n = Math::BigInt->new(1);
+	# $ret is the returned value
+    my $ret = Math::BigInt->new(0);
+
+    # Reverse the bit string
+    foreach my $bit (reverse(split '', $self->to_bin())) {
+        # If the nth bit is 1, add 2**n to $ret
+        if ($bit) {
+			$ret += $n;
+		}
+		# Next bit value...
+        $n *= 2;
+    }
+
+    return $ret;
+}
+
+
+# Get the network address
+sub to_network 
+{
+	my $self = shift;
+
+
+	if (!defined($self->{'network_bin'})) {
+		$self->_calc_ranges();
+	}
+
+	$self->{'ip'} = $self->to_str($self->{'network_bin'});
+	$self->{'ip_bin'} = undef;
+
+	return $self;
+}
+
+
+# Get the broadcast address
+sub to_broadcast 
+{
+	my $self = shift;
+
+
+	if (!defined($self->{'broadcast_bin'})) {
+		$self->_calc_ranges();
+	}
+	
+	$self->{'ip'} = $self->to_str($self->{'broadcast_bin'});
+	$self->{'ip_bin'} = undef;
+
+	return $self;
+}
+
+
+# Check if ip address is inside another ip address range
+sub is_within
+{
+	my ($self,$test) = @_;
+
+	# We can only compare IPs of same type
+	if ($self->{'ip_version'} != $test->{'ip_version'}) {
+		return 0;
+	}
+
+	my $network = $test->copy()->to_network()->to_int();
+	my $broadcast = $test->copy()->to_broadcast()->to_int();
+
+	my $self_int = $self->to_int();
+
+	if ($self_int >= $network && $self_int <= $broadcast) {
+		return 1;
+	}
+
+	return 0;
 }
 
 
@@ -168,23 +320,8 @@ sub is_valid
 }
 
 
-# Clone an object
-sub copy
-{
-	my $self = shift;
-
-	my $clone = bless({
-		'ip_version' => $self->{'ip_version'},
-		'ip' => $self->{'ip'},
-		'cidr' => $self->{'cidr'}
-	}, ref($self));
-
-	return $clone;
-}
-
-
 # Check the IP address and format accordingly
-sub clean_ip
+sub _clean_ip
 {
 	my $self = shift;
 
@@ -193,24 +330,24 @@ sub clean_ip
 		# Pull off mask
 		my $mask;
 		if ($self->{'raw_ip'} =~ s/\/(\d{1,2})$//g) {
-			$mask = $1 ? $1 : undef;
+			$mask = defined($1) ? $1 : undef;
 		}
 
 		# Check for invalid chars
 		if (!($self->{'raw_ip'} =~ m/^[\d\.]+$/)) {
-			setError("IPv4 Address '".$self->{'raw_ip'}."' contains invalid characters");
+			setError("IPv4 address '".$self->{'raw_ip'}."' contains invalid characters");
 			return 0; 
 		}
 
 		# Check for leading .
 		if ($self->{'raw_ip'} =~ m/^\./) {
-			setError("IPv4 Address '".$self->{'raw_ip'}."' begins with '.'");
+			setError("IPv4 address '".$self->{'raw_ip'}."' begins with '.'");
 			return 0;
 		}
 
 		# Check for trailing .
 		if ($self->{'raw_ip'} =~ m/\.$/) {
-			setError("IPv4 Address '".$self->{'raw_ip'}."' ends with '.'");
+			setError("IPv4 address '".$self->{'raw_ip'}."' ends with '.'");
 			return 0;
 		}
 
@@ -223,7 +360,7 @@ sub clean_ip
 			# Check for invalid octets
 			foreach my $octet ($a,$b,$c,$d) {
 				if (defined($octet) && $octet > 255) {
-					setError("Address '".$self->{'raw_ip'}."' contains octets which exceed 255");
+					setError("IPv4 address '".$self->{'raw_ip'}."' contains octets which exceed 255");
 					return 0;
 				}
 			}
@@ -243,7 +380,7 @@ sub clean_ip
 			}
 
 			# Default mask
-			$mask = ( defined($mask) && $mask >= 1 && $mask <= 32 ) ? $mask : 32;
+			$mask = ( defined($mask) && $mask >= 0 && $mask <= 32 ) ? $mask : 32;
 			$self->{'cidr'} = $mask;
 
 			# Build ip
@@ -251,11 +388,11 @@ sub clean_ip
 
 			# Check for full ipv4
 			if (!($self->{'ip'} =~ /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/)) {
-				setError("Address '".$self->{'ip'}."' is not a full ipv4 address");
+				setError("IPv4 address '".$self->{'ip'}."' is not a full ipv4 address");
 				return 0;
 			}
 		} else {
-			setError("Address '".$self->{'raw_ip'}."' is not a supported format");
+			setError("IP address '".$self->{'raw_ip'}."' is not a supported format");
 			return 0;
 		}
 
@@ -264,7 +401,7 @@ sub clean_ip
 		# Pull off mask
 		my $mask;
 		if ($self->{'raw_ip'} =~ s/\/(\d{1,3})$//g) {
-			$mask = $1 ? $1 : undef;
+			$mask = defined($1) ? $1 : undef;
 		}
 
 		# Count octets
@@ -274,21 +411,33 @@ sub clean_ip
 			return 0;
 		}
 
-		# $k is a counter
-		my $k;
+		# Number of specified octets
+		my $numOctets = 0;
+		# Number of octets specified on the left hand side
+		my $preOctets = 0;
 
 		# Check octets
-		foreach (split /:/, $self->{'raw_ip'}) {
+		my $foundEmpty = 0;
+		foreach my $octet (split /:/, $self->{'raw_ip'}) {
 
-			# Empty octet ?
-			next if ($_ eq '');
+			# Empty octet?
+			if ($octet eq '') {
+				$foundEmpty = 1;
+				next;
+			}
+			# If we not found an empty octet, we have one more octet on the left hand side (pre)
+			if (!$foundEmpty) {
+				$preOctets++;
+			}
 
-			$k++;
+			$numOctets++;
 
-			# Normal v6 octet ?
-			next if (/^[a-f\d]{1,4}$/i);
+			# Normal v6 octet?
+			if ($octet =~ /^[a-f\d]{1,4}$/i) {
+				next;
+			}
 
-			setError("Address component '$_' is invalid");
+			setError("IPv6 address component '$octet' is invalid");
 			return 0;
 		}
 
@@ -298,27 +447,27 @@ sub clean_ip
 			$count++;
 		}
 		if ($count > 1) {
-			setError("Address '".$self->{'raw_ip'}."' contains more than one ::");
+			setError("IPv6 address '".$self->{'raw_ip'}."' contains more than one ::");
 			return 0;
 		}
 
 		# Expand address
 		my $tempIP;
-		if ($k < 8) {
+		if ($numOctets < 8) {
 
 			# If there is no :: return 0
 			if (!$self->{'raw_ip'} =~ /::/) {
-				setError("Address '".$self->{'raw_ip'}."' has missing components");
+				setError("IPv6 address '".$self->{'raw_ip'}."' has missing components");
 				return 0;
 			}
 
 			# Set mask
-			if (!defined($mask)) {
-				$mask = 16*$k
+			if (!defined($mask) && $numOctets == $preOctets) {
+				$mask = 16 * $preOctets;
 			}
 
 			my @missingOctets;
-			for (my $i = 0; $i < (8 - $k); $i++) {
+			for (my $i = 0; $i < (8 - $numOctets); $i++) {
 				push(@missingOctets, '0000');
 			}
 			my $octets = join(':', @missingOctets);
@@ -351,69 +500,19 @@ sub clean_ip
 
 		# Check for full ipv6
 		if (!($self->{'ip'} =~ /^[a-f\d]{4}:[a-f\d]{4}:[a-f\d]{4}:[a-f\d]{4}:[a-f\d]{4}:[a-f\d]{4}:[a-f\d]{4}:[a-f\d]{4}$/i)) {
-			setError("Address '".$self->{'raw_ip'}."' is not a valid IPv6 address");
+			setError("IPv6 address '".$self->{'raw_ip'}."' is not a valid IPv6 address");
 			return 0;
 		}
 
 		# Default mask
-		$self->{'cidr'} = $mask ? $mask : 128;
+		$self->{'cidr'} = defined($mask) ? $mask : 128;
 	}
 
 	return 1;
 }
 
 
-# Convert to binary
-sub to_bin
-{
-	my $self = shift;
-
-	# We already have it in bin
-	return $self->{'ip_bin'} if ($self->{'ip_bin'});
-
-	# Check how to convert to bin
-	if ($self->{'ip_version'} == 6) {
-		my $cleanIP = $self->{'ip'};
-		$cleanIP =~ s/://g;
-   		$self->{'ip_bin'} = unpack('B128', pack('H32', $cleanIP));
-
-	} elsif ($self->{'ip_version'} == 4) {
-		$self->{'ip_bin'} = unpack('B32', pack('C4C4C4C4', split(/\./, $self->{'ip'})));
-	}
-
-	return $self->{'ip_bin'};
-}
-
-
-# Convert address to Math::BigInt
-sub to_int
-{
-    my $self = shift;
-
-    # $n is the increment (the numerical value of the bit we about to 'set')
-    my $n = Math::BigInt->new(1);
-	# $ret is the returned value
-    my $ret = Math::BigInt->new(0);
-
-    # Reverse the bit string
-    foreach my $bit (reverse(split '', $self->to_bin())) {
-        # If the nth bit is 1, add 2**n to $dec
-        if ($bit) {
-			$ret += $n;
-		}
-		# Next bit value...
-        $n *= 2;
-    }
-
-# XXX: This would convert to a string?
-#   # Strip leading + sign
-#    $ret =~ s/^\+//;
-
-    return $ret;
-}
-
-
-# Calculate network and broadcast
+# Calculate network_bin and broadcast_bin
 sub _calc_ranges
 {
 	my $self = shift;
@@ -429,11 +528,11 @@ sub _calc_ranges
 	my $NETWORK_MASK = '1' x  $cidr . '0' x ($bitlen - $cidr);
 	my $BROADCAST_MASK = '0' x  $cidr . '1' x ($bitlen - $cidr);
 
-	# network = remove bits (AND)
-	# broadcast = add bits (OR)
+	# network_bin = remove bits (AND)
+	# broadcast_bin = add bits (OR)
 	my $bin = $self->to_bin();
-	$self->{'network'} = '';
-	$self->{'broadcast'} = '';
+	$self->{'network_bin'} = '';
+	$self->{'broadcast_bin'} = '';
 	# Loop with all bits
 	for (my $i = 0; $i < $bitlen; $i++) {
 		# Cut off the bits
@@ -441,62 +540,11 @@ sub _calc_ranges
 		my $b = substr($NETWORK_MASK,$i,1);
 		my $c = substr($BROADCAST_MASK,$i,1);
 		# Bit arithmatic ! , sneaky but quick
-		$self->{'network'} .= ($a + $b == 2) ? 1 : 0;
-		$self->{'broadcast'} .= ($a + $c > 0) ? 1 : 0;
+		$self->{'network_bin'} .= ($a + $b == 2) ? 1 : 0;
+		$self->{'broadcast_bin'} .= ($a + $c > 0) ? 1 : 0;
 	}
 }
 
-
-# Get the network address
-sub to_network 
-{
-	my $self = shift;
-
-
-	if (!defined($self->{'network'})) {
-		$self->_calc_ranges();
-	}
-
-	$self->{'ip'} = $self->{'network'};
-	$self->{'cidr'} = undef;
-
-	return $self;
-}
-
-
-# Get the broadcast address
-sub to_broadcast 
-{
-	my $self = shift;
-
-
-	if (!defined($self->{'broadcast'})) {
-		$self->_calc_ranges();
-	}
-	
-	$self->{'ip'} = $self->{'broadcast'};
-	$self->{'cidr'} = undef;
-
-	return $self;
-}
-
-
-# Check if ip address is inside another ip address range
-sub is_within
-{
-	my ($self,$test) = @_;
-
-	my $network = $test->copy()->to_network()->to_int();
-	my $broadcast = $test->copy()->to_broadcast()->to_int();
-
-	my $self_int = $self->to_int();
-
-	if ($self_int >= $network && $self_int <= $broadcast) {
-		return 1;
-	}
-
-	return 0;
-}
 
 
 1;
