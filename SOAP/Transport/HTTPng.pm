@@ -1,6 +1,6 @@
-# Copyright 2008-2009, AllWorldIT
-# Copyright 2005-2007, LinuxRulz
-# Copyright 2005, Nigel Kukard <nkukard@lbsd.net>
+# Copyright (C) 2008-2010, AllWorldIT
+# Copyright (C) 2005-2007, LinuxRulz
+# Copyright (C) 2005, Nigel Kukard <nkukard@lbsd.net>
 # Copyright 1996-2003, Gisle Aas
 #
 # This library is free software; you can redistribute it and/or
@@ -13,7 +13,43 @@ use strict;
 use warnings;
 
 
-# Threadded implementation of a SOAP HTTP transport
+# Overrided server so we can intercept sensitive info
+package SOAP::Transport::HTTPng::Server;
+
+use SOAP::Transport::HTTP;
+
+use base qw(SOAP::Transport::HTTP::Server);
+
+# Setup a logging function
+sub set_logger {
+	my ($self,$logobj) = @_;
+
+	$self->{'logobj'} = $logobj;
+}
+
+# We want to override the make_fault function to catch sensitive information
+# being sent out when code b0rkage occurs.
+sub make_fault {
+	my ($self, $code, $string, $detail, $actor) = @_;
+
+
+	# Check if this is a string?
+	if (ref($code) eq "") {
+		# If its a server fault, just output something nice
+		if ($code eq "Server") {
+			# If we have a logging element in ourselves, use it
+			if (defined($self->{'logobj'})) {
+				$self->{'logobj'}->log(0,"[SOAP::Server] $string");
+			}
+			$string = "An error occured while processing the request. Please try again later.";
+		}
+	}
+	return $self->SUPER::make_fault($code,$string,$detail,$actor);
+}
+
+
+
+# PreForked implementation of a SOAP HTTP transport
 package SOAP::Transport::HTTPng::Daemon;
 use base qw(Net::Server::PreFork);
 
@@ -70,7 +106,7 @@ sub child_init_hook
 	my $soapcfg = $self->{'soap_config'};
 
 
-	$self->{'_soap_engine'} = SOAP::Transport::HTTP::Server->new;
+	$self->{'_soap_engine'} = SOAP::Transport::HTTPng::Server->new;
 	# Mappings
 	if (defined($soapcfg->{'dispatch_to'}) && @{$soapcfg->{'dispatch_to'}} > 0) {
 		$self->{'_soap_engine'}->dispatch_to(@{$soapcfg->{'dispatch_to'}});
@@ -85,6 +121,8 @@ sub child_init_hook
 	if (defined($soapcfg->{'on_dispatch'})) {
 		$self->{'_soap_engine'}->on_dispatch($soapcfg->{'on_dispatch'});
 	}
+	
+	$self->{'_soap_engine'}->set_logger($self);
 }
 
 sub process_request
@@ -100,6 +138,12 @@ sub process_request
 	$c->send_response($soap->response);
 }
 
+sub log
+{
+	my $self = shift;
+
+	return $self->SUPER::log(@_);
+}
 
 
 package SOAP::Transport::HTTPng::Daemon::Client;
