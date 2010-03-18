@@ -164,7 +164,7 @@ use Data::Dumper;
 
 # Some constants we need
 use constant {
-	DEBUG 	=> 1,
+	DEBUG 	=> 0,
 	CRLF 	=> "\015\012",  # HTTP::Daemon claims \r\n is not portable?
 };
 
