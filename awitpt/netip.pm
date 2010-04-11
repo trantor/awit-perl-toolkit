@@ -27,6 +27,7 @@ package awitpt::netip;
 use strict;
 use warnings;
 
+use Math::BigInt;
 
 # Our current error message
 my $error = "";
