@@ -1,5 +1,5 @@
 # Database independent layer module
-# Copyright (C) 2009, AllWorldIT
+# Copyright (C) 2009-2010, AllWorldIT
 # Copyright (C) 2008, LinuxRulz
 # Copyright (C) 2005-2007 Nigel Kukard  <nkukard@lbsd.net>
 #
