@@ -50,7 +50,6 @@ our (@ISA,@EXPORT);
 
 use POSIX qw( strftime );
 use Date::Parse;
-use DateTime;
 
 use awitpt::db::dbilayer;
 
@@ -441,8 +440,8 @@ sub DBSelectSearch
 					}
 					# Convert to ISO format
 					my $unixtime = str2time($data->{'value'});
-					my $date = DateTime->from_epoch( epoch => $unixtime );
-					$value = DBQuote($date->ymd());
+					my @d = localtime($unixtime);
+					$value = DBQuote(sprintf("%4d-%02d-%02d", $d[5]+1900, $d[4]+1, $d[3]));
 
 
 				} elsif ($data->{'type'} eq "list") {
