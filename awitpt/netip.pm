@@ -285,7 +285,7 @@ sub is_valid
 		}
 
 		# Does the IP address have more than one '::' pattern ?
-		my $count;
+		my $count = 0;
 		while ($ip =~ /::/g) {
 			$count++;
 		}
@@ -443,7 +443,7 @@ sub _clean_ip
 		}
 
 		# Does the IP address have more than one '::' pattern ?
-		my $count;
+		my $count = 0;
 		while ($self->{'raw_ip'} =~ /::/g) {
 			$count++;
 		}
@@ -453,7 +453,7 @@ sub _clean_ip
 		}
 
 		# Expand address
-		my $tempIP;
+		my $tempIP = $self->{'raw_ip'};
 		if ($numOctets < 8) {
 
 			# If there is no :: return 0
@@ -472,8 +472,6 @@ sub _clean_ip
 				push(@missingOctets, '0000');
 			}
 			my $octets = join(':', @missingOctets);
-
-			$tempIP = $self->{'raw_ip'};
 
 			# Replace ::
 			$tempIP =~ s/::/:$octets:/g;
