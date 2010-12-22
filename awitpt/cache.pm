@@ -89,20 +89,58 @@ sub Error
 # Initialize cache
 #
 # @param server Server object
+# @param params Parameters for the cache
+# @li cache_file Filename of the cache file
+# @li cache_file_user Owner of the cache file
+# @li cache_file_group Group of the cache file
 sub Init
 {
-	my $server = shift;
+	my ($server,$params) = @_;
 	my $ch;
 
 
-	# Create Cache
-	$ch = Cache::FastMmap->new(
+	# We going to pass these options to new()
+	my %opt = (
 		'page_size' => 2048,
 		'num_pages' => 1000,
 		'expire_time' => 300,
 		'raw_values' => 1,
 		'unlink_on_exit' => 1,
 	);
+
+	# Check if we have the optional $params
+	if (defined($params)) {
+		# If we have a special cache file, use it and init it too
+		if (defined($params->{'cache_file'})) {
+			$opt{'share_file'} = $params->{'cache_file'};
+			$opt{'init_file'} = 1;
+		}
+	}
+
+	# Create Cache
+	$ch = Cache::FastMmap->new(%opt);
+
+	# Check if we have the optional $params
+	if (defined($params)) {
+		# If we have an explicit owner set, use it
+		if (defined($params->{'cache_file_user'})) {
+			# Check all is ok...
+			my ($chown_user,$chown_group);
+			if (!($chown_user = getpwnam($params->{'cache_file_user'}))) {
+				setError("User '$chown_user' appears to be invalid: $?");
+				return(-1);
+			}
+			if (!($chown_group = getpwnam($params->{'cache_file_group'}))) {
+				setError("Group '$chown_group' appears to be invalid: $?");
+				return(-1);
+			}
+			# Go in and chown it
+			if (!chown($chown_user,$chown_group,$opt{'share_file'})) {
+				setError("Failed to chown cache file '".$opt{'share_file'}."': $!");
+				return(-1);
+			}
+		}
+	}
 
 	# Stats
 	$ch->set('Cache/Stats/Hit',0);
