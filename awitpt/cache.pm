@@ -130,7 +130,7 @@ sub Init
 				setError("User '$chown_user' appears to be invalid: $?");
 				return(-1);
 			}
-			if (!($chown_group = getpwnam($params->{'cache_file_group'}))) {
+			if (!($chown_group = getgrnam($params->{'cache_file_group'}))) {
 				setError("Group '$chown_group' appears to be invalid: $?");
 				return(-1);
 			}
