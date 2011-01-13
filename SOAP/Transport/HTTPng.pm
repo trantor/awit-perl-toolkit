@@ -1,4 +1,4 @@
-# Copyright (C) 2008-2010, AllWorldIT
+# Copyright (C) 2008-2011, AllWorldIT
 # Copyright (C) 2005-2007, LinuxRulz
 # Copyright (C) 2005, Nigel Kukard <nkukard@lbsd.net>
 # Copyright 1996-2003, Gisle Aas
@@ -63,8 +63,6 @@ use Socket;
 use SOAP::Lite;
 use SOAP::Transport::HTTP;
 
-use Data::Dumper;
-
 sub new
 {
 	my $self = shift;
@@ -91,10 +89,6 @@ sub post_configure
 	if (!defined($server->{'timeout'})) {
 		$server->{'timeout'} = 30;
 	}
-
-	# Set constants
-	$server->{'proto'} = "TCP";
-
 
 	$self->SUPER::post_configure(@_);
 }
@@ -160,8 +154,6 @@ use LWP::MediaTypes qw(guess_media_type);
 use Carp ();
 use URI;
 
-use Data::Dumper;
-
 # Some constants we need
 use constant {
 	DEBUG 	=> 0,
@@ -205,12 +197,7 @@ sub get_request
 	$buf = "" unless defined $buf;
 
 	# Pull in timeout
-    	my $timeout = $self->{'_daemon'}->{'server'}->{'timeout'};
-
-
-	# Setup fdset with STDIN
-	my $fdset = "";
-	vec($fdset, fileno(STDIN), 1) = 1;
+	my $timeout = $self->{'daemon'}->{'server'}->{'timeout'};
 
 	# Grab HTTP header
 	while (1) {
@@ -222,7 +209,7 @@ sub get_request
 					last;  # we have it
 
 				# Header is over 16kb
-				} elsif (length($buf) > 16*1024) {
+				} elsif (length($buf) > 16384) {
 					$self->send_error(413); # REQUEST_ENTITY_TOO_LARGE
 					$self->reason("Very long header");
 					return;
@@ -232,12 +219,12 @@ sub get_request
 			}
 
 		# Again ... too large
-		} elsif (length($buf) > 16*1024) {
+		} elsif (length($buf) > 16384) {
 			$self->send_error(414); # REQUEST_URI_TOO_LARGE
 			$self->reason("Very long first line");
 			return;
 		}
-		return unless $self->_need_more(\$buf, $timeout, $fdset);
+		return unless $self->_need_more(\$buf, $timeout);
 	}
 
 	# Disect the protocol
@@ -311,7 +298,7 @@ sub get_request
 				# must read until we have a complete chunk
 				while ($missing > 0) {
 					print STDERR "Need $missing more bytes\n" if DEBUG;
-					my $n = $self->_need_more(\$buf, $timeout, $fdset);
+					my $n = $self->_need_more(\$buf, $timeout);
 					return unless $n;
 					$missing -= $n;
 				}
@@ -319,7 +306,7 @@ sub get_request
 				substr($buf, 0, $size+2) = '';
 			# need more data in order to have a complete chunk header
 			} else {
-				return unless $self->_need_more(\$buf, $timeout, $fdset);
+				return unless $self->_need_more(\$buf, $timeout);
 			}
 		}
 		$r->content($body);
@@ -332,7 +319,7 @@ sub get_request
 		while (1) {
 			if ($buf !~ /\012/) {
 				# need at least one line to look at
-				return unless $self->_need_more(\$buf, $timeout, $fdset);
+				return unless $self->_need_more(\$buf, $timeout);
 			} else {
 				$buf =~ s/^([^\012]*)\012//;
 				$_ = $1;
@@ -365,7 +352,7 @@ sub get_request
 			$index = index($buf, $boundary);
 			last if $index >= 0;
 			# end marker not yet found
-			return unless $self->_need_more(\$buf, $timeout, $fdset);
+			return unless $self->_need_more(\$buf, $timeout);
 		}
 		$index += length($boundary);
 		$r->content(substr($buf, 0, $index));
@@ -376,7 +363,7 @@ sub get_request
 		my $missing = $len - length($buf);
 		while ($missing > 0) {
 			print "Need $missing more bytes of content\n" if DEBUG;
-			my $n = $self->_need_more(\$buf, $timeout, $fdset);
+			my $n = $self->_need_more(\$buf, $timeout);
 			return unless $n;
 			$missing -= $n;
 		}
@@ -396,20 +383,30 @@ sub get_request
 
 sub _need_more
 {
-	my($self,$buf,$timeout,$fdset) = @_;
+	my($self,$buf,$timeout) = @_;
 
+	# Lets start our select()
+	my $select = IO::Select->new($self->{'daemon'}->{'server'}->{'client'});
 
-	# If we have a timeout, use select on FH
-	if ($timeout) {
-		my $n = select($fdset,undef,undef,$timeout);
-		unless ($n) {
-			$self->reason(defined($n) ? "Timeout" : "select: $!");
-			return;
+	# Check if we can read
+	if (my ($fd) = $select->can_read($timeout)) {
+		my $nread;
+
+		# Lets read some data ....
+		while ($nread = sysread($fd,$$buf,10,length($$buf))) {
+			last if ($nread < 10);
 		}
+
+		# Check if we got something back
+		if (!defined($nread)) {
+			$self->reason("Client closed");
+		}
+
+		return $nread;
 	}
-	my $n = sysread(STDIN, $$buf, 2048, length($$buf));
-	$self->reason(defined($n) ? "Client closed" : "sysread: $!") unless $n;
-	return $n;
+	
+	$self->reason("Timeout");
+	return;
 }
 
 
@@ -461,34 +458,49 @@ sub force_last_request
 sub send_status_line
 {
 	my ($self, $status, $message, $proto) = @_;
+	my $client = $self->{'daemon'}->{'server'}->{'client'};
+
+
 	return if $self->antique_client;
+
 	$status  ||= RC_OK;
 	$message ||= status_message($status) || "";
 	$proto   ||= $HTTP::Daemon::PROTO || "HTTP/1.1";
-	printf(STDOUT '%s %s %s%s',$proto,$status,$message,CRLF);
+
+	syswrite($client,sprintf('%s %s %s%s',$proto,$status,$message,CRLF));
 }
 
 
 sub send_crlf
 {
 	my $self = shift;
-	print(STDOUT CRLF);
+	my $client = $self->{'daemon'}->{'server'}->{'client'};
+
+
+	syswrite($client,CRLF);
 }
 
 
 sub send_basic_header
 {
 	my $self = shift;
+	my $client = $self->{'daemon'}->{'server'}->{'client'};
+
+
 	return if $self->antique_client;
+
 	$self->send_status_line(@_);
-	printf(STDOUT 'Date: %s%s',time2str(time), CRLF);
-	printf(STDOUT 'Server: %s%s', $self->{'daemon'}->{'_product_tokens'}, CRLF) if ($self->{'daemon'}->{'_product_tokens'});
+
+	syswrite($client,sprintf('Date: %s%s',time2str(time), CRLF));
+	syswrite($client,sprintf('Server: %s%s', $self->{'daemon'}->{'_product_tokens'}, CRLF)) if ($self->{'daemon'}->{'_product_tokens'});
 }
 
 
 sub send_response
 {
 	my ($self,$res) = @_;
+	my $client = $self->{'daemon'}->{'server'}->{'client'};
+
 
 	if (!ref $res) {
 		$res ||= RC_OK;
@@ -518,22 +530,23 @@ sub send_response
 		} else {
 			$self->force_last_request;
 		}
-		print(STDOUT $res->headers_as_string(CRLF));
-		print(STDOUT CRLF);  # separates headers and content
+		syswrite($client,$res->headers_as_string(CRLF));
+		# Separates headers and content
+		$self->send_crlf();
 	}
 	if (ref($content) eq "CODE") {
 		while (1) {
 			my $chunk = &$content();
 			last unless defined($chunk) && length($chunk);
 			if ($chunked) {
-				printf(STDOUT '%x%s%s%s', length($chunk), CRLF, $chunk, CRLF);
+				syswrite($client,sprintf('%x%s%s%s', length($chunk), CRLF, $chunk, CRLF));
 			} else {
-				print(STDOUT $chunk);
+				syswrite($client,$chunk);
 			}
 		}
-		printf(STDOUT '0%s%s',CRLF,CRLF) if $chunked;  # no trailers either
+		syswrite($client,sprintf('0%s%s',CRLF,CRLF)) if $chunked;  # no trailers either
 	} elsif (length $content) {
-		print(STDOUT $content);
+		syswrite($client,$content);
 	}
 }
 
@@ -541,19 +554,28 @@ sub send_response
 sub send_redirect
 {
 	my($self, $loc, $status, $content) = @_;
+	my $client = $self->{'daemon'}->{'server'}->{'client'};
+
 	$status ||= RC_MOVED_PERMANENTLY;
+
 	Carp::croak("Status '$status' is not redirect") unless is_redirect($status);
+
 	$self->send_basic_header($status);
+
 	my $base = $self->{'daemon'}->{'config'}->{'url'};
+
 	$loc = URI->new($loc, $base) unless ref($loc);
 	$loc = $loc->abs($base);
-	printf(STDOUT 'Location: %s%s',$loc,CRLF);
+
+	syswrite($client,sprintf('Location: %s%s',$loc,CRLF));
+
 	if ($content) {
 		my $ct = $content =~ /^\s*</ ? "text/html" : "text/plain";
-		printf(STDOUT 'Content-Type: %s%s',$ct,CRLF);
+		syswrite($client,sprintf('Content-Type: %s%s',$ct,CRLF));
 	}
-	print(STDOUT CRLF);
-	print(STDOUT $content) if $content;
+
+	$self->send_crlf();
+	syswrite($client,$content) if $content;
 	return $self->force_last_request;  # no use keeping the connection open
 }
 
@@ -561,22 +583,30 @@ sub send_redirect
 sub send_error
 {
 	my($self, $status, $error) = @_;
+	my $client = $self->{'daemon'}->{'server'}->{'client'};
+
 	$status ||= RC_BAD_REQUEST;
 	Carp::croak("Status '$status' is not an error") unless is_error($status);
+
 	my $mess = status_message($status);
+
 	$error  ||= "";
+
 	$mess = <<EOT;
 <title>$status $mess</title>
 <h1>$status $mess</h1>
 $error
 EOT
+
 	unless ($self->antique_client) {
 		$self->send_basic_header($status);
-		printf(STDOUT 'Content-Type: text/html%s',CRLF);
-		printf(STDOUT 'Content-Length: %s%s',length($mess),CRLF);
-		print(STDOUT CRLF);
+		syswrite($client,sprintf('Content-Type: text/html%s',CRLF));
+		syswrite($client,sprintf('Content-Length: %s%s',length($mess),CRLF));
+		$self->send_crlf();
 	}
-	print(STDOUT $mess);
+
+	syswrite($client,$mess);
+
 	return $status;
 }
 
@@ -584,6 +614,8 @@ EOT
 sub send_file_response
 {
 	my($self, $file) = @_;
+	my $client = $self->{'daemon'}->{'server'}->{'client'};
+
 
 	if (-d $file) {
 		$self->send_dir($file);
@@ -597,11 +629,11 @@ sub send_file_response
 		my($size,$mtime) = (stat _)[7,9];
 		unless ($self->antique_client) {
 			$self->send_basic_header;
-			printf(STDOUT 'Content-Type: %s%s',$ct,CRLF);
-			printf(STDOUT 'Content-Encoding: %s%s',$ce,CRLF) if $ce;
-			printf(STDOUT 'Content-Length: %s%s',$size,CRLF) if $size;
-			printf(STDOUT 'Last-Modified: %s%s',time2str($mtime),CRLF) if $mtime;
-			print(STDOUT CRLF);
+			syswrite($client,sprintf('Content-Type: %s%s',$ct,CRLF));
+			syswrite($client,sprintf('Content-Encoding: %s%s',$ce,CRLF)) if $ce;
+			syswrite($client,sprintf('Content-Length: %s%s',$size,CRLF)) if $size;
+			syswrite($client,sprintf('Last-Modified: %s%s',time2str($mtime),CRLF)) if $mtime;
+			$self->send_crlf();
 		}
 		$self->send_file(\*F);
 	return RC_OK;
@@ -623,6 +655,8 @@ sub send_dir
 sub send_file
 {
 	my($self, $file) = @_;
+	my $client = $self->{'daemon'}->{'server'}->{'client'};
+
 
 	my $opened = 0;
 	local(*FILE);
@@ -635,10 +669,10 @@ sub send_file
 	my $cnt = 0;
 	my $buf = "";
 	my $n;
-	while ($n = sysread($file, $buf, 8*1024)) {
+	while ($n = sysread($file, $buf, 8192)) {
 		last if !$n;
 		$cnt += $n;
-		print(STDOUT $buf);
+		syswrite($client,$buf);
 	}
 	close($file) if $opened;
 	return $cnt;
