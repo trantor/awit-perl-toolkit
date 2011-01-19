@@ -156,8 +156,10 @@ use URI;
 
 # Some constants we need
 use constant {
-	DEBUG 	=> 0,
-	CRLF 	=> "\015\012",  # HTTP::Daemon claims \r\n is not portable?
+	DEBUG		 		=> 0,
+	BUFFER_SIZE 		=> 1024,
+	MAX_REQUEST_SIZE	=> 16384,
+	CRLF 				=> "\015\012",  # HTTP::Daemon claims \r\n is not portable?
 };
 
 
@@ -209,9 +211,9 @@ sub get_request
 					last;  # we have it
 
 				# Header is over 16kb
-				} elsif (length($buf) > 16384) {
+				} elsif (length($buf) > MAX_REQUEST_SIZE) {
 					$self->send_error(413); # REQUEST_ENTITY_TOO_LARGE
-					$self->reason("Very long header");
+					$self->reason("Very long header > ".MAX_REQUEST_SIZE);
 					return;
 				}
 			} else {
@@ -219,9 +221,9 @@ sub get_request
 			}
 
 		# Again ... too large
-		} elsif (length($buf) > 16384) {
+		} elsif (length($buf) > MAX_REQUEST_SIZE) {
 			$self->send_error(414); # REQUEST_URI_TOO_LARGE
-			$self->reason("Very long first line");
+			$self->reason("Very long first line > ".MAX_REQUEST_SIZE);
 			return;
 		}
 		return unless $self->_need_more(\$buf, $timeout);
@@ -283,7 +285,7 @@ sub get_request
 		# Handle chunked transfer encoding
 		my $body = "";
 		while (1) {
-			print STDERR "Chunked\n" if DEBUG;
+			print STDERR "HTTPNG: Chunked\n" if DEBUG;
 			if ($buf =~ s/^([^\012]*)\012//) {
 				my $chunk_head = $1;
 				unless ($chunk_head =~ /^([0-9A-Fa-f]+)/) {
@@ -297,7 +299,7 @@ sub get_request
 				my $missing = $size - length($buf) + 2; # 2=CRLF at chunk end
 				# must read until we have a complete chunk
 				while ($missing > 0) {
-					print STDERR "Need $missing more bytes\n" if DEBUG;
+					print STDERR "HTTPNG: Need $missing more bytes\n" if DEBUG;
 					my $n = $self->_need_more(\$buf, $timeout);
 					return unless $n;
 					$missing -= $n;
@@ -362,7 +364,7 @@ sub get_request
 		# Plain body specified by "Content-Length"
 		my $missing = $len - length($buf);
 		while ($missing > 0) {
-			print "Need $missing more bytes of content\n" if DEBUG;
+			print "HTTPNG: Need $missing more bytes of content\n" if DEBUG;
 			my $n = $self->_need_more(\$buf, $timeout);
 			return unless $n;
 			$missing -= $n;
@@ -393,9 +395,7 @@ sub _need_more
 		my $nread;
 
 		# Lets read some data ....
-		while ($nread = sysread($fd,$$buf,10,length($$buf))) {
-			last if ($nread < 10);
-		}
+		$nread = sysread($fd,$$buf,BUFFER_SIZE,length($$buf));
 
 		# Check if we got something back
 		if (!defined($nread)) {
@@ -405,7 +405,7 @@ sub _need_more
 		return $nread;
 	}
 	
-	$self->reason("Timeout");
+	$self->reason("Timeout, no data for more than ".$timeout."s");
 	return;
 }
 
