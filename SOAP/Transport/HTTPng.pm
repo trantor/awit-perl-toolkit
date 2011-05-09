@@ -27,6 +27,18 @@ sub set_logger {
 	$self->{'logobj'} = $logobj;
 }
 
+# Setup a call logger function
+sub set_soap_method_logger {
+	my ($self,$loggerobj) = @_;
+
+	$self->{'soap_method_logger'} = $loggerobj;
+}
+sub set_soap_result_logger {
+	my ($self,$loggerobj) = @_;
+
+	$self->{'soap_result_logger'} = $loggerobj;
+}
+
 # We want to override the make_fault function to catch sensitive information
 # being sent out when code b0rkage occurs.
 sub make_fault {
@@ -47,6 +59,17 @@ sub make_fault {
 	return $self->SUPER::make_fault($code,$string,$detail,$actor);
 }
 
+# This is the actual interface to the method logger function which allows us
+# to customize it
+sub soap_method_logger {
+	my ($self,@params) = @_;
+	$self->{'soap_method_logger'}(@params) if (defined($self->{'soap_method_logger'}));
+}
+sub soap_result_logger {
+	my ($self,@params) = @_;
+	$self->{'soap_result_logger'}(@params) if (defined($self->{'soap_result_logger'}));
+}
+
 
 
 # PreForked implementation of a SOAP HTTP transport
@@ -61,6 +84,7 @@ use IO::Socket qw(inet_ntoa);
 use Socket;
 
 use SOAP::Lite;
+
 use SOAP::Transport::HTTP;
 
 sub new
@@ -76,7 +100,6 @@ sub new
 
 	return $self;
 }
-
 
 
 sub post_configure
@@ -115,7 +138,14 @@ sub child_init_hook
 	if (defined($soapcfg->{'on_dispatch'})) {
 		$self->{'_soap_engine'}->on_dispatch($soapcfg->{'on_dispatch'});
 	}
-	
+
+	# Setup logging
+	if (defined($soapcfg->{'soap_method_logger'})) {
+		$self->{'_soap_engine'}->set_soap_method_logger($soapcfg->{'soap_method_logger'});
+	}
+	if (defined($soapcfg->{'soap_result_logger'})) {
+		$self->{'_soap_engine'}->set_soap_result_logger($soapcfg->{'soap_result_logger'});
+	}
 	$self->{'_soap_engine'}->set_logger($self);
 }
 
