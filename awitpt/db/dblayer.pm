@@ -437,6 +437,12 @@ sub DBSelectSearch
 
 					} elsif ($data->{'comparison'} eq "eq") {
 						$match = "=";
+
+					} elsif ($data->{'comparison'} eq "ge") {
+						$match = ">=";
+
+					} elsif ($data->{'comparison'} eq "le") {
+						$match = "<=";
 					}
 					# Convert to ISO format
 					my $unixtime = str2time($data->{'value'});
@@ -474,6 +480,12 @@ sub DBSelectSearch
 
 					} elsif ($data->{'comparison'} eq "eq") {
 						$match = "=";
+
+					} elsif ($data->{'comparison'} eq "ge") {
+						$match = ">=";
+
+					} elsif ($data->{'comparison'} eq "le") {
+						$match = "<=";
 					}
 
 					$value = DBQuote($data->{'value'});
