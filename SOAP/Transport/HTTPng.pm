@@ -9,7 +9,7 @@
 use strict;
 use warnings;
 
-our $VERSION = 0.002;
+our $VERSION = 0.010;
 
 
 # Overrided server so we can intercept sensitive info
@@ -388,8 +388,12 @@ use URI;
 # Some constants we need
 use constant {
 	DEBUG		 		=> 0,
-	BUFFER_SIZE 		=> 1024,
-	MAX_REQUEST_SIZE	=> 16384,
+# This must be bigger than the biggest packet, if it is 1024 for instance, and the
+# packet is 1200, we read 1024, but we do not get can_read() triggering true again.
+# So the entire bit of data MUST be read in first pass.
+	BUFFER_SIZE 		=> 65536,
+# Make this big enough to handle an inbound packet ... 1Mb sound sane nowadays?
+	MAX_REQUEST_SIZE	=> 1024*1024,
 	CRLF 				=> "\015\012",  # HTTP::Daemon claims \r\n is not portable?
 };
 
