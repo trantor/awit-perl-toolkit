@@ -18,7 +18,7 @@ package SOAP::Lite;
 
 use 5.006; #weak references require perl 5.6
 use strict;
-our $VERSION = 0.71299;
+our $VERSION = 0.712;
 # ======================================================================
 
 package SOAP::XMLSchemaApacheSOAP::Deserializer;
@@ -2735,14 +2735,6 @@ sub find_target {
     return ($class, $method_uri, $method_name);
 }
 
-# Logging functions for the method info and result
-sub soap_method_logger
-{
-}
-sub soap_result_logger
-{
-}
-
 sub handle {
     SOAP::Trace::trace('()');
     my $self = shift;
@@ -2795,7 +2787,6 @@ sub handle {
 
             # SOAP::Trace::dispatch($fullname);
             SOAP::Trace::parameters(@parameters);
-            $self->soap_method_logger($class,$method_uri,$method_name,@parameters);
 
             push @parameters, $request
                 if UNIVERSAL::isa($class => 'SOAP::Server::Parameters');
@@ -2824,7 +2815,6 @@ sub handle {
                     : $class->$method_name(SOAP::Server::Object->objects(@parameters)) );
         }; # end eval block
         SOAP::Trace::result(@results);
-        $self->soap_result_logger($class,$method_uri,$method_name,@results);
 
         # let application errors pass through with 'Server' code
         die ref $@

@@ -6,17 +6,18 @@
 # This library is free software; you can redistribute it and/or
 # modify it under the same terms as Perl itself.
 
-
-
-
 use strict;
 use warnings;
+
+our $VERSION = 0.002;
 
 
 # Overrided server so we can intercept sensitive info
 package SOAP::Transport::HTTPng::Server;
 
 use SOAP::Transport::HTTP;
+
+my $COMPRESS = 'deflate';
 
 use base qw(SOAP::Transport::HTTP::Server);
 
@@ -38,6 +39,206 @@ sub set_soap_result_logger {
 
 	$self->{'soap_result_logger'} = $loggerobj;
 }
+
+
+# NK: this is basically a copy of the handle() function from SOAP::Lite, just with a few
+# logger changes
+sub handle_SOAP_Lite {
+    SOAP::Trace::trace('()');
+    my $self = shift;
+    $self = $self->new if !ref $self; # inits the server when called in a static context
+    $self->init_context();
+    # we want to restore it when we are done
+    local $SOAP::Constants::DEFAULT_XML_SCHEMA
+        = $SOAP::Constants::DEFAULT_XML_SCHEMA;
+
+    # SOAP version WILL NOT be restored when we are done.
+    # is it problem?
+
+    my $result = eval {
+        local $SIG{__DIE__};
+        # why is this here:
+        $self->serializer->soapversion(1.1);
+        my $request = eval { $self->deserializer->deserialize($_[0]) };
+
+        die SOAP::Fault
+            ->faultcode($SOAP::Constants::FAULT_VERSION_MISMATCH)
+            ->faultstring($@)
+                if $@ && $@ =~ /^$SOAP::Constants::WRONG_VERSION/;
+
+        die "Application failed during request deserialization: $@" if $@;
+        my $som = ref $request;
+        die "Can't find root element in the message"
+            unless $request->match($som->envelope);
+        $self->serializer->soapversion(SOAP::Lite->soapversion);
+        $self->serializer->xmlschema($SOAP::Constants::DEFAULT_XML_SCHEMA
+            = $self->deserializer->xmlschema)
+                if $self->deserializer->xmlschema;
+
+        die SOAP::Fault
+            ->faultcode($SOAP::Constants::FAULT_MUST_UNDERSTAND)
+            ->faultstring("Unrecognized header has mustUnderstand attribute set to 'true'")
+            if !$SOAP::Constants::DO_NOT_CHECK_MUSTUNDERSTAND &&
+                grep {
+                    $_->mustUnderstand
+                    && (!$_->actor || $_->actor eq $SOAP::Constants::NEXT_ACTOR)
+                } $request->dataof($som->headers);
+
+        die "Can't find method element in the message"
+            unless $request->match($som->method);
+        # TODO - SOAP::Dispatcher plugs in here
+        # my $handler = $self->dispatcher->find_handler($request);
+        my($class, $method_uri, $method_name) = $self->find_target($request);
+        my @results = eval {
+            local $^W;
+            my @parameters = $request->paramsin;
+
+            # SOAP::Trace::dispatch($fullname);
+            SOAP::Trace::parameters(@parameters);
+			# NK: This happens inside an eval? oh well whatever
+            $self->soap_method_logger($class,$method_uri,$method_name,@parameters);
+            push @parameters, $request
+                if UNIVERSAL::isa($class => 'SOAP::Server::Parameters');
+
+            no strict qw(refs);
+            SOAP::Server::Object->references(
+                defined $parameters[0]
+                && ref $parameters[0]
+                && UNIVERSAL::isa($parameters[0] => $class)
+                    ? do {
+                        my $object = shift @parameters;
+                        SOAP::Server::Object->object(ref $class
+                            ? $class
+                            : $object
+                        )->$method_name(SOAP::Server::Object->objects(@parameters)),
+
+                        # send object back as a header
+                        # preserve name, specify URI
+                        SOAP::Header
+                            ->uri($SOAP::Constants::NS_SL_HEADER => $object)
+                            ->name($request->dataof($som->method.'/[1]')->name)
+                    } # end do block
+
+                    # SOAP::Dispatcher will plug-in here as well
+                    # $handler->dispatch(SOAP::Server::Object->objects(@parameters)
+                    : $class->$method_name(SOAP::Server::Object->objects(@parameters)) );
+        }; # end eval block
+        SOAP::Trace::result(@results);
+        $self->soap_result_logger($class,$method_uri,$method_name,@results);
+
+        # let application errors pass through with 'Server' code
+        die ref $@
+            ? $@
+            : $@ =~ /^Can\'t locate object method "$method_name"/
+                ? "Failed to locate method ($method_name) in class ($class)"
+                : SOAP::Fault->faultcode($SOAP::Constants::FAULT_SERVER)->faultstring($@)
+                    if $@;
+
+        my $result = $self->serializer
+            ->prefix('s') # distinguish generated element names between client and server
+            ->uri($method_uri)
+            ->envelope(response => $method_name . 'Response', @results);
+        return $result;
+    };
+
+    # void context
+    return unless defined wantarray;
+
+    # normal result
+    return $result unless $@;
+
+    # check fails, something wrong with message
+    return $self->make_fault($SOAP::Constants::FAULT_CLIENT, $@) unless ref $@;
+
+    # died with SOAP::Fault
+    return $self->make_fault($@->faultcode   || $SOAP::Constants::FAULT_SERVER,
+        $@->faultstring || 'Application error',
+        $@->faultdetail, $@->faultactor)
+    if UNIVERSAL::isa($@ => 'SOAP::Fault');
+
+    # died with complex detail
+    return $self->make_fault($SOAP::Constants::FAULT_SERVER, 'Application error' => $@);
+
+} # end of handle()
+
+
+# NK: this is basically a copy of the handle() function from SOAP::Transport::HTTP
+sub handle {
+    my $self = shift->new;
+
+    SOAP::Trace::debug( $self->request->content );
+
+    if ( $self->request->method eq 'POST' ) {
+        $self->action( $self->request->header('SOAPAction') || undef );
+    }
+    elsif ( $self->request->method eq 'M-POST' ) {
+        return $self->response(
+            HTTP::Response->new(
+                510,    # NOT EXTENDED
+"Expected Mandatory header with $SOAP::Constants::NS_ENV as unique URI"
+            ) )
+          if $self->request->header('Man') !~
+              /^"$SOAP::Constants::NS_ENV";\s*ns\s*=\s*(\d+)/;
+        $self->action( $self->request->header("$1-SOAPAction") || undef );
+    }
+    else {
+        return $self->response(
+            HTTP::Response->new(405) )    # METHOD NOT ALLOWED
+    }
+
+    my $compressed =
+      ( $self->request->content_encoding || '' ) =~ /\b$COMPRESS\b/;
+    $self->options->{is_compress} ||=
+      $compressed && eval { require Compress::Zlib };
+
+    # signal error if content-encoding is 'deflate', but we don't want it OR
+    # something else, so we don't understand it
+    return $self->response(
+        HTTP::Response->new(415) )        # UNSUPPORTED MEDIA TYPE
+      if $compressed && !$self->options->{is_compress}
+          || !$compressed
+          && ( $self->request->content_encoding || '' ) =~ /\S/;
+
+    my $content_type = $self->request->content_type || '';
+
+# in some environments (PerlEx?) content_type could be empty, so allow it also
+# anyway it'll blow up inside ::Server::handle if something wrong with message
+# TBD: but what to do with MIME encoded messages in THOSE environments?
+    return $self->make_fault( $SOAP::Constants::FAULT_CLIENT,
+            "Content-Type must be 'text/xml,' 'multipart/*,' "
+          . "'application/soap+xml,' 'or 'application/dime' instead of '$content_type'"
+      )
+      if !$SOAP::Constants::DO_NOT_CHECK_CONTENT_TYPE
+          && $content_type
+          && $content_type ne 'application/soap+xml'
+          && $content_type ne 'text/xml'
+          && $content_type ne 'application/dime'
+          && $content_type !~ m!^multipart/!;
+
+    # TODO - Handle the Expect: 100-Continue HTTP/1.1 Header
+    if ( defined( $self->request->header("Expect") )
+        && ( $self->request->header("Expect") eq "100-Continue" ) ) {
+
+    }
+
+    # TODO - this should query SOAP::Packager to see what types it supports,
+    #      I don't like how this is hardcoded here.
+    my $content =
+      $compressed
+      ? Compress::Zlib::uncompress( $self->request->content )
+      : $self->request->content;
+
+    my $response = $self->handle_SOAP_Lite(
+        $self->request->content_type =~ m!^multipart/!
+        ? join( "\n", $self->request->headers_as_string, $content )
+        : $content
+    ) or return;
+
+    SOAP::Trace::debug($response);
+
+    $self->make_response( $SOAP::Constants::HTTP_ON_SUCCESS_CODE, $response );
+}
+
 
 # We want to override the make_fault function to catch sensitive information
 # being sent out when code b0rkage occurs.
