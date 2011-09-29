@@ -388,10 +388,7 @@ use URI;
 # Some constants we need
 use constant {
 	DEBUG		 		=> 0,
-# This must be bigger than the biggest packet, if it is 1024 for instance, and the
-# packet is 1200, we read 1024, but we do not get can_read() triggering true again.
-# So the entire bit of data MUST be read in first pass.
-	BUFFER_SIZE 		=> 65536,
+	BUFFER_SIZE 		=> 1024,
 # Make this big enough to handle an inbound packet ... 1Mb sound sane nowadays?
 	MAX_REQUEST_SIZE	=> 1024*1024,
 	CRLF 				=> "\015\012",  # HTTP::Daemon claims \r\n is not portable?
@@ -461,7 +458,7 @@ sub get_request
 			$self->reason("Very long first line > ".MAX_REQUEST_SIZE);
 			return;
 		}
-		return unless $self->_need_more(\$buf, $timeout);
+		return unless $self->_need_more(\$buf);
 	}
 
 	# Disect the protocol
@@ -535,7 +532,7 @@ sub get_request
 				# must read until we have a complete chunk
 				while ($missing > 0) {
 					print STDERR "HTTPNG: Need $missing more bytes\n" if DEBUG;
-					my $n = $self->_need_more(\$buf, $timeout);
+					my $n = $self->_need_more(\$buf);
 					return unless $n;
 					$missing -= $n;
 				}
@@ -543,7 +540,7 @@ sub get_request
 				substr($buf, 0, $size+2) = '';
 			# need more data in order to have a complete chunk header
 			} else {
-				return unless $self->_need_more(\$buf, $timeout);
+				return unless $self->_need_more(\$buf);
 			}
 		}
 		$r->content($body);
@@ -556,7 +553,7 @@ sub get_request
 		while (1) {
 			if ($buf !~ /\012/) {
 				# need at least one line to look at
-				return unless $self->_need_more(\$buf, $timeout);
+				return unless $self->_need_more(\$buf);
 			} else {
 				$buf =~ s/^([^\012]*)\012//;
 				$_ = $1;
@@ -589,7 +586,7 @@ sub get_request
 			$index = index($buf, $boundary);
 			last if $index >= 0;
 			# end marker not yet found
-			return unless $self->_need_more(\$buf, $timeout);
+			return unless $self->_need_more(\$buf);
 		}
 		$index += length($boundary);
 		$r->content(substr($buf, 0, $index));
@@ -600,7 +597,7 @@ sub get_request
 		my $missing = $len - length($buf);
 		while ($missing > 0) {
 			print "HTTPNG: Need $missing more bytes of content\n" if DEBUG;
-			my $n = $self->_need_more(\$buf, $timeout);
+			my $n = $self->_need_more(\$buf);
 			return unless $n;
 			$missing -= $n;
 		}
@@ -620,29 +617,107 @@ sub get_request
 
 sub _need_more
 {
-	my($self,$buf,$timeout) = @_;
+	my($self,$buf) = @_;
+
+
+	# Pull in timeout
+	my $timeout = $self->{'daemon'}->{'server'}->{'timeout'};
 
 	# Lets start our select()
 	my $select = IO::Select->new($self->{'daemon'}->{'server'}->{'client'});
 
 	# Check if we can read
 	if (my ($fd) = $select->can_read($timeout)) {
-		my $nread;
-
 		# Lets read some data ....
-		$nread = sysread($fd,$$buf,BUFFER_SIZE,length($$buf));
+		# We do not loop here, when reading we check what we have so far
+		# then read more, check, read more check, not the ENTIRE buffer
+		# at once
+		return $self->clever_sysread($fd,$buf,length($$buf));
+	}
+	
+	$self->reason("Timeout on read, no data for more than ".$timeout."s");
+	return;
+}
+
+
+sub clever_sysread
+{
+	my ($self,$fd,$buf,$offset) = @_;
+
+
+	# Setup default offset
+	if (!defined($offset)) {
+		$offset = 0;
+	}
+
+	# Loop with read
+	my $tread = 0;
+	while (1) {
+		# Read the actual data
+		my $nread = sysread($fd,$$buf,BUFFER_SIZE,$offset+$tread);
 
 		# Check if we got something back
 		if (!defined($nread)) {
 			$self->reason("Client closed");
+			last;
 		}
 
-		return $nread;
+		$tread += $nread;
+
+		# Short-read , means we got it all
+		if ($nread < BUFFER_SIZE) {
+			last;
+		}
 	}
-	
-	$self->reason("Timeout, no data for more than ".$timeout."s");
-	return;
+
+	return $tread;
 }
+
+sub clever_syswrite
+{
+	my ($self,$fd,$buf,$length,$offset) = @_;
+
+
+	# Setup default length
+	if (!defined($length)) {
+		$length = length($buf);
+	}
+	# Setup default offset
+	if (!defined($offset)) {
+		$offset = 0;
+	}
+
+	# Pull in timeout
+	my $timeout = $self->{'daemon'}->{'server'}->{'timeout'};
+
+	# Loop with write
+	my $twrite = 0;
+	while ($twrite < $length) {
+		# Lets start our select()
+		my $select = IO::Select->new($fd);
+
+		# Check if we can write
+		my $nwrite;
+		if (my ($fd) = $select->can_write($timeout)) {
+			# Write the actual data
+			$nwrite = syswrite($fd,$buf,(($length-$twrite) < BUFFER_SIZE ? ($length-$twrite) : BUFFER_SIZE),$offset+$twrite);
+			# Check if we got something back
+			if (!defined($nwrite)) {
+				$self->reason("Client closed");
+				last;
+			}
+		# Timeout
+		} else {
+			$self->reason("Timeout on write, no data for more than ".$timeout."s");
+			return;
+		}
+
+		$twrite += $nwrite;
+	}
+
+	return $twrite;
+}
+
 
 
 sub reason
@@ -702,7 +777,7 @@ sub send_status_line
 	$message ||= status_message($status) || "";
 	$proto   ||= $HTTP::Daemon::PROTO || "HTTP/1.1";
 
-	syswrite($client,sprintf('%s %s %s%s',$proto,$status,$message,CRLF));
+	$self->clever_syswrite($client,sprintf('%s %s %s%s',$proto,$status,$message,CRLF));
 }
 
 
@@ -712,7 +787,7 @@ sub send_crlf
 	my $client = $self->{'daemon'}->{'server'}->{'client'};
 
 
-	syswrite($client,CRLF);
+	$self->clever_syswrite($client,CRLF);
 }
 
 
@@ -726,8 +801,10 @@ sub send_basic_header
 
 	$self->send_status_line(@_);
 
-	syswrite($client,sprintf('Date: %s%s',time2str(time), CRLF));
-	syswrite($client,sprintf('Server: %s%s', $self->{'daemon'}->{'_product_tokens'}, CRLF)) if ($self->{'daemon'}->{'_product_tokens'});
+	$self->clever_syswrite($client,sprintf('Date: %s%s',time2str(time), CRLF));
+	if ($self->{'daemon'}->{'_product_tokens'}) {
+		$self->clever_syswrite($client,sprintf('Server: %s%s', $self->{'daemon'}->{'_product_tokens'}, CRLF));
+	}
 }
 
 
@@ -741,8 +818,8 @@ sub send_response
 		$res ||= RC_OK;
 		$res = HTTP::Response->new($res, @_);
 	}
-
 	my $content = $res->content;
+use Data::Dumper; print STDERR "RESPONSE: ".Dumper($content);
 	my $chunked;
 	unless ($self->antique_client) {
 		my $code = $res->code;
@@ -765,7 +842,7 @@ sub send_response
 		} else {
 			$self->force_last_request;
 		}
-		syswrite($client,$res->headers_as_string(CRLF));
+		$self->clever_syswrite($client,$res->headers_as_string(CRLF));
 		# Separates headers and content
 		$self->send_crlf();
 	}
@@ -774,14 +851,26 @@ sub send_response
 			my $chunk = &$content();
 			last unless defined($chunk) && length($chunk);
 			if ($chunked) {
-				syswrite($client,sprintf('%x%s%s%s', length($chunk), CRLF, $chunk, CRLF));
+				$self->clever_syswrite($client,sprintf('%x%s%s%s', length($chunk), CRLF, $chunk, CRLF));
 			} else {
-				syswrite($client,$chunk);
+				$self->clever_syswrite($client,$chunk);
 			}
 		}
-		syswrite($client,sprintf('0%s%s',CRLF,CRLF)) if $chunked;  # no trailers either
+		$self->clever_syswrite($client,sprintf('0%s%s',CRLF,CRLF)) if $chunked;  # no trailers either
 	} elsif (length $content) {
-		syswrite($client,$content);
+        # Write out content nicely...
+        my $remaining = length($content);
+        my $offset = 0;
+        while ($remaining) {
+            my $nwrite = $self->clever_syswrite($client,$content,($remaining < BUFFER_SIZE ? $remaining : BUFFER_SIZE),$offset);
+            # Check if something went wrong
+            if (!defined($nwrite)) {
+                $self->reason("Client closed");
+            }
+            $remaining -= $nwrite;
+            $offset += $nwrite;
+        }
+
 	}
 }
 
@@ -802,15 +891,15 @@ sub send_redirect
 	$loc = URI->new($loc, $base) unless ref($loc);
 	$loc = $loc->abs($base);
 
-	syswrite($client,sprintf('Location: %s%s',$loc,CRLF));
+	$self->clever_syswrite($client,sprintf('Location: %s%s',$loc,CRLF));
 
 	if ($content) {
 		my $ct = $content =~ /^\s*</ ? "text/html" : "text/plain";
-		syswrite($client,sprintf('Content-Type: %s%s',$ct,CRLF));
+		$self->clever_syswrite($client,sprintf('Content-Type: %s%s',$ct,CRLF));
 	}
 
 	$self->send_crlf();
-	syswrite($client,$content) if $content;
+	$self->clever_syswrite($client,$content) if $content;
 	return $self->force_last_request;  # no use keeping the connection open
 }
 
@@ -835,12 +924,12 @@ EOT
 
 	unless ($self->antique_client) {
 		$self->send_basic_header($status);
-		syswrite($client,sprintf('Content-Type: text/html%s',CRLF));
-		syswrite($client,sprintf('Content-Length: %s%s',length($mess),CRLF));
+		$self->clever_syswrite($client,sprintf('Content-Type: text/html%s',CRLF));
+		$self->clever_syswrite($client,sprintf('Content-Length: %s%s',length($mess),CRLF));
 		$self->send_crlf();
 	}
 
-	syswrite($client,$mess);
+	$self->clever_syswrite($client,$mess);
 
 	return $status;
 }
@@ -864,10 +953,10 @@ sub send_file_response
 		my($size,$mtime) = (stat _)[7,9];
 		unless ($self->antique_client) {
 			$self->send_basic_header;
-			syswrite($client,sprintf('Content-Type: %s%s',$ct,CRLF));
-			syswrite($client,sprintf('Content-Encoding: %s%s',$ce,CRLF)) if $ce;
-			syswrite($client,sprintf('Content-Length: %s%s',$size,CRLF)) if $size;
-			syswrite($client,sprintf('Last-Modified: %s%s',time2str($mtime),CRLF)) if $mtime;
+			$self->clever_syswrite($client,sprintf('Content-Type: %s%s',$ct,CRLF));
+			$self->clever_syswrite($client,sprintf('Content-Encoding: %s%s',$ce,CRLF)) if $ce;
+			$self->clever_syswrite($client,sprintf('Content-Length: %s%s',$size,CRLF)) if $size;
+			$self->clever_syswrite($client,sprintf('Last-Modified: %s%s',time2str($mtime),CRLF)) if $mtime;
 			$self->send_crlf();
 		}
 		$self->send_file(\*F);
@@ -904,7 +993,7 @@ sub send_file
 	my $cnt = 0;
 	my $buf = "";
 	my $n;
-	while ($n = sysread($file, $buf, 8192)) {
+	while ($n = sysread($file, $buf, BUFFER_SIZE)) {
 		last if !$n;
 		$cnt += $n;
 		syswrite($client,$buf);
