@@ -819,7 +819,6 @@ sub send_response
 		$res = HTTP::Response->new($res, @_);
 	}
 	my $content = $res->content;
-use Data::Dumper; print STDERR "RESPONSE: ".Dumper($content);
 	my $chunked;
 	unless ($self->antique_client) {
 		my $code = $res->code;
