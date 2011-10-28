@@ -865,6 +865,7 @@ sub send_response
             # Check if something went wrong
             if (!defined($nwrite)) {
                 $self->reason("Client closed");
+				last;
             }
             $remaining -= $nwrite;
             $offset += $nwrite;
