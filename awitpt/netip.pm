@@ -69,6 +69,13 @@ sub new
 
 	my $self = {};
 
+	# Check if this is an IPv4 to IPv6 mapping
+	if ($ip =~ /\:ffff\:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/i) {
+
+		# Grab the IP
+		$ip = $1;
+	}
+
 	# Guess ip version
 	if ($ip =~ /:/) {
 		$self->{'ip_version'} = 6;
