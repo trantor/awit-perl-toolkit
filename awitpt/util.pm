@@ -46,7 +46,7 @@ our (@ISA,@EXPORT,@EXPORT_OK);
 	booleanize
 
 	parseMacro
-	
+
 	sanitizePath
 
 	prettyUndef
