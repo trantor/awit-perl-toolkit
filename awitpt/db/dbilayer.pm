@@ -187,6 +187,7 @@ sub connect
 	$self->{_dbh} = DBI->connect($self->{_dsn}, $self->{_username}, $self->{_password}, {
 			'AutoCommit' => 1,
 			'PrintError' => 0,
+			'RaiseError' => 0,
 			'FetchHashKeyName' => 'NAME_lc'
 	});
 
