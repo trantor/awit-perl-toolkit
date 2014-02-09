@@ -32,6 +32,7 @@ require Exporter;
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
 @EXPORT = qw(
+	DBInit
 	DBConnect
 	DBSelect
 	DBDo
@@ -89,6 +90,59 @@ sub Error
 
 	# Return error
 	return $err;
+}
+
+
+
+## @fn DBInit($dbconfig)
+# Initialize the database for use
+#
+# @param DSN Database DSN
+# @li DSN - Database DSN
+# @li Username - Optional database username
+# @li Password - Optional database password
+# @li TablePrefix - Optional database table prefix
+sub DBInit
+{
+	my $dbconfig = shift;
+
+
+	if (!defined($dbconfig)) {
+		setError("The dbconfig hash is not defined");
+		return undef;
+	}
+
+	if (ref($dbconfig) ne "HASH") {
+		setError("The dbconfig option is not a hash");
+		return undef;
+	}
+
+	if (!defined($dbconfig->{'DSN'})) {
+		setError("The dbconfig hash does not contain 'DSN'");
+		return undef;
+	}
+
+	# Check if we created
+	$dbh = awitpt::db::dbilayer->new($dbconfig->{'DSN'},$dbconfig->{'Username'},$dbconfig->{'Password'},
+			$dbconfig->{'TablePrefix'});
+
+	return $dbh;
+}
+
+
+
+## @fn DBInit($dbconfig)
+# Initialize the database for use
+#
+sub DBConnect
+{
+	my $res;
+
+	if ($res = $dbh->connect()) {
+		setError($dbh->Error());
+	}
+
+	return $res;
 }
 
 
