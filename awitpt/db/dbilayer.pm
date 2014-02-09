@@ -223,15 +223,27 @@ sub _check
 	my $self = shift;
 
 
-	# If we not in a transaction try connect
-	if ($self->{_in_transaction} == 0) {
-		# Try ping
-		if (!$self->{_dbh}->ping()) {
+	# DB is disconnected if _dbh is not defined
+	if (!defined($self->{_dbh})) {
+		goto RECONNECT;
+	}
+
+	# Try ping
+	if (!$self->{_dbh}->ping()) {
+		# If we not in a transaction try connect
+		if ($self->{_in_transaction} == 0) {
 			# Disconnect & reconnect
 			$self->{_dbh}->disconnect();
-			$self->connect();
+			goto RECONNECT;
 		}
+		$self->{_error} = "Cannot reconnect to DB while inside transaction";
+		return -1;
 	}
+
+	return 0;
+
+RECONNECT:
+	return $self->connect();
 }
 
 
@@ -246,7 +258,9 @@ sub select
 	my ($self,$query,@params) = @_;
 
 
-	$self->_check();
+	if ($self->_check()) {
+		return undef;
+	}
 
 	# Prepare query
 	my $sth;
@@ -276,7 +290,9 @@ sub do
 	my ($self,$command,@params) = @_;
 
 
-	$self->_check();
+	if ($self->_check()) {
+		return undef;
+	}
 
 #	# Build single command instead of using binding of params
 #	# not all databases support binding, and not all support all
@@ -312,6 +328,10 @@ sub lastInsertID
 	my ($self,$table,$column) = @_;
 
 
+	if ($self->_check()) {
+		return undef;
+	}
+
 	# Get last insert id
 	my $res;
 	if (!($res = $self->{_dbh}->last_insert_id(undef,undef,$table,$column))) {
@@ -332,7 +352,9 @@ sub begin
 	my $self = shift;
 
 
-	$self->_check();
+	if ($self->_check()) {
+		return undef;
+	}
 
 	$self->{_in_transaction}++;
 
@@ -360,6 +382,10 @@ sub commit
 {
 	my $self = shift;
 
+
+	if ($self->_check()) {
+		return undef;
+	}
 
 	# Reduce level
 	$self->{_in_transaction}--;
@@ -391,6 +417,11 @@ sub rollback
 {
 	my $self = shift;
 
+
+	if ($self->_check()) {
+		$self->{_in_transaction}--;
+		return undef;
+	}
 
 	# If we at top level, return success
 	if ($self->{_in_transaction} < 1) {
