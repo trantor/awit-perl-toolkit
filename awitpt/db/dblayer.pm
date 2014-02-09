@@ -226,6 +226,8 @@ sub DBDo
 	# Prepare query
 	my $sth;
 	if (!($sth = $dbh->do($command,@data))) {
+		# Remove newlines...
+		$command =~ s/(\n|\s{2,})/ /g;
 		setError("Error executing command '$command': ".$dbh->Error());
 		return undef;
 	}
