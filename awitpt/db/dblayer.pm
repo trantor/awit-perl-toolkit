@@ -99,10 +99,11 @@ sub Error
 # @param handle Set internal database handle we use
 sub setHandle
 {
-		my $handle = shift;
+	my $handle = shift;
 
-		$dbh = $handle;
+	$dbh = $handle;
 }
+
 
 
 ## @fn DBSelect($query,@params)
@@ -129,6 +130,7 @@ sub DBSelect
 
 	return $sth;
 }
+
 
 
 ## @fn DBDo($command)
@@ -178,6 +180,7 @@ sub DBDo
 }
 
 
+
 ## @fn DBLastInsertID($table,$column)
 # Function to get last insert id
 #
@@ -200,6 +203,7 @@ sub DBLastInsertID
 }
 
 
+
 ## @fn DBBegin
 # Function to begin a transaction
 #
@@ -214,6 +218,7 @@ sub DBBegin
 
 	return $res;
 }
+
 
 
 ## @fn DBCommit
@@ -232,6 +237,7 @@ sub DBCommit
 }
 
 
+
 ## @fn DBRollback
 # Function to rollback a transaction
 #
@@ -246,6 +252,7 @@ sub DBRollback
 
 	return $res;
 }
+
 
 
 ## @fn DBQuote($variable)
@@ -263,6 +270,7 @@ sub DBQuote
 }
 
 
+
 ## @fn DBFreeRes($sth)
 # Function to cleanup DB query
 #
@@ -278,11 +286,13 @@ sub DBFreeRes
 }
 
 
+
 # Function to get table prefix
 sub DBTablePrefix
 {
 	return $dbh->table_prefix();
 }
+
 
 
 #
@@ -321,6 +331,7 @@ sub DBSelectNumResults
 
 	return $num_results;
 }
+
 
 
 ## @fn DBSelectSearch($query,$search,$filters,$sorts)
@@ -424,7 +435,8 @@ sub DBSelectSearch
 
 					# The comparison type must be defined
 					if (!defined($data->{'comparison'})) {
-						setError("Parameter 'search' element 'Filter' requires field data element 'comparison' for date field '$field'");
+						setError("Parameter 'search' element 'Filter' requires field data element 'comparison' for date field ".
+								"'$field'");
 						return (undef,-1);
 					}
 
@@ -467,7 +479,8 @@ sub DBSelectSearch
 
 					# The comparison type must be defined
 					if (!defined($data->{'comparison'})) {
-						setError("Parameter 'search' element 'Filter' requires field data element 'comparison' for numeric field '$field'");
+						setError("Parameter 'search' element 'Filter' requires field data element 'comparison' for numeric field ".
+								"'$field'");
 						return (undef,-1);
 					}
 
@@ -588,6 +601,7 @@ sub DBSelectSearch
 }
 
 
+
 # Convert a lower case array to mixed case
 sub hashifyLCtoMC
 {
@@ -606,7 +620,6 @@ sub hashifyLCtoMC
 
 	return $res;
 }
-
 
 
 

@@ -247,15 +247,6 @@ sub select
 
 	$self->_check();
 
-#	# Build single query instead of using binding of params
-#	# not all databases support binding, and not all support all
-#	# the places we use ?
-#	$query =~ s/\?/%s/g;
-#	# Map each element in params to the quoted value
-#	$query = sprintf($query,
-#		map { $self->quote($_) } @params
-#	);
-#use Data::Dumper; print STDERR Dumper($query);
 	# Prepare query
 	my $sth;
 	if (!($sth = $self->{_dbh}->prepare($query))) {
@@ -264,7 +255,6 @@ sub select
 	}
 
 	# Check for execution error
-#	if (!$sth->execute()) {
 	if (!$sth->execute(@params)) {
 		$self->{_error} = $self->{_dbh}->errstr;
 		return undef;
