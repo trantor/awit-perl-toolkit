@@ -1,5 +1,5 @@
 # Network IP Address Handling
-# Copyright (C) 2009-2011, AllWorldIT
+# Copyright (C) 2009-2014, AllWorldIT
 # Copyright (C) 2008, LinuxRulz
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,6 +17,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 # * * *
+# 2014-03-14: Portions of this are derived from ideas and code in Net::Subnet
+# - Nigel Kukard <nkukard@lbsd.net>
 # 2009-12-03: Portions of this are derived from ideas and code in Net::IP
 # - Robert Anderson <randerson@lbsd.net>
 # * * *
@@ -28,6 +30,17 @@ use strict;
 use warnings;
 
 use Math::BigInt;
+
+use Socket;
+BEGIN {
+	if (defined &Socket::inet_pton) {
+		Socket->import(qw(inet_pton AF_INET6));
+	} else {
+		require Socket6;
+		Socket6->import(qw(inet_pton AF_INET6));
+	}
+};
+
 
 # Our current error message
 my $error = "";
@@ -165,30 +178,6 @@ sub to_str
 }
 
 
-# Convert address to Math::BigInt
-sub to_int
-{
-    my $self = shift;
-
-    # $n is the increment (the numerical value of the bit we about to 'set')
-    my $n = Math::BigInt->new(1);
-	# $ret is the returned value
-    my $ret = Math::BigInt->new(0);
-
-    # Reverse the bit string
-    foreach my $bit (reverse(split '', $self->to_bin())) {
-        # If the nth bit is 1, add 2**n to $ret
-        if ($bit) {
-			$ret += $n;
-		}
-		# Next bit value...
-        $n *= 2;
-    }
-
-    return $ret;
-}
-
-
 # Get the network address
 sub to_network
 {
@@ -206,20 +195,39 @@ sub to_network
 }
 
 
-# Get the broadcast address
-sub to_broadcast 
-{
+# Internal function to convert v4 CIDR into bitmask
+sub _cidr2mask_v4 {
 	my $self = shift;
 
+    return pack "N", 0xffffffff << (32 - $self->{'cidr'});
+}
 
-	if (!defined($self->{'broadcast_bin'})) {
-		$self->_calc_ranges();
-	}
-	
-	$self->{'ip'} = $self->to_str($self->{'broadcast_bin'});
-	$self->{'ip_bin'} = undef;
 
-	return $self;
+# Internal function to convert v6 CIDR into bitmask
+sub _cidr2mask_v6 {
+	my $self = shift;
+
+    return pack('B128', '1' x $self->{'cidr'});
+}
+
+
+# Function to match an v4 address
+sub _ipv4_matcher {
+	my ($self,$test) = @_;
+
+    my $mask = $test->_cidr2mask_v4();
+
+    return ((inet_aton($test->{'ip'}) & $mask) eq (inet_aton($self->{'ip'}) & $mask));
+}
+
+
+# Function to match an v6 address
+sub _ipv6_matcher {
+	my ($self,$test) = @_;
+
+    my $mask = $test->_cidr2mask_v6();
+
+    return ((inet_pton(AF_INET6,$test->{'ip'}) & $mask) eq (inet_pton(AF_INET6, $self->{'ip'}) & $mask));
 }
 
 
@@ -230,19 +238,17 @@ sub is_within
 
 	# We can only compare IPs of same type
 	if ($self->{'ip_version'} != $test->{'ip_version'}) {
-		return 0;
+		return undef;
 	}
 
-	my $network = $test->copy()->to_network()->to_int();
-	my $broadcast = $test->copy()->to_broadcast()->to_int();
-
-	my $self_int = $self->to_int();
-
-	if ($self_int >= $network && $self_int <= $broadcast) {
-		return 1;
+	# Check which matcher to use
+	if ($self->{'ip_version'} == 4) {
+		return $self->_ipv4_matcher($test);
+	} elsif ($self->{'ip_version'} == 6) {
+		return $self->_ipv6_matcher($test);
 	}
 
-	return 0;
+	return undef;
 }
 
 
