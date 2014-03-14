@@ -1,5 +1,5 @@
 # Database independent layer module
-# Copyright (C) 2009-2011, AllWorldIT
+# Copyright (C) 2009-2014, AllWorldIT
 # Copyright (C) 2008, LinuxRulz
 # Copyright (C) 2005-2007 Nigel Kukard  <nkukard@lbsd.net>
 #
@@ -187,6 +187,7 @@ sub connect
 	$self->{_dbh} = DBI->connect($self->{_dsn}, $self->{_username}, $self->{_password}, {
 			'AutoCommit' => 1,
 			'PrintError' => 0,
+			'RaiseError' => 0,
 			'FetchHashKeyName' => 'NAME_lc'
 	});
 
@@ -222,15 +223,27 @@ sub _check
 	my $self = shift;
 
 
-	# If we not in a transaction try connect
-	if ($self->{_in_transaction} == 0) {
-		# Try ping
-		if (!$self->{_dbh}->ping()) {
+	# DB is disconnected if _dbh is not defined
+	if (!defined($self->{_dbh})) {
+		goto RECONNECT;
+	}
+
+	# Try ping
+	if (!$self->{_dbh}->ping()) {
+		# If we not in a transaction try connect
+		if ($self->{_in_transaction} == 0) {
 			# Disconnect & reconnect
 			$self->{_dbh}->disconnect();
-			$self->connect();
+			goto RECONNECT;
 		}
+		$self->{_error} = "Cannot reconnect to DB while inside transaction";
+		return -1;
 	}
+
+	return 0;
+
+RECONNECT:
+	return $self->connect();
 }
 
 
@@ -245,17 +258,10 @@ sub select
 	my ($self,$query,@params) = @_;
 
 
-	$self->_check();
+	if ($self->_check()) {
+		return undef;
+	}
 
-#	# Build single query instead of using binding of params
-#	# not all databases support binding, and not all support all
-#	# the places we use ?
-#	$query =~ s/\?/%s/g;
-#	# Map each element in params to the quoted value
-#	$query = sprintf($query,
-#		map { $self->quote($_) } @params
-#	);
-#use Data::Dumper; print STDERR Dumper($query);
 	# Prepare query
 	my $sth;
 	if (!($sth = $self->{_dbh}->prepare($query))) {
@@ -264,7 +270,6 @@ sub select
 	}
 
 	# Check for execution error
-#	if (!$sth->execute()) {
 	if (!$sth->execute(@params)) {
 		$self->{_error} = $self->{_dbh}->errstr;
 		return undef;
@@ -285,7 +290,9 @@ sub do
 	my ($self,$command,@params) = @_;
 
 
-	$self->_check();
+	if ($self->_check()) {
+		return undef;
+	}
 
 #	# Build single command instead of using binding of params
 #	# not all databases support binding, and not all support all
@@ -321,6 +328,10 @@ sub lastInsertID
 	my ($self,$table,$column) = @_;
 
 
+	if ($self->_check()) {
+		return undef;
+	}
+
 	# Get last insert id
 	my $res;
 	if (!($res = $self->{_dbh}->last_insert_id(undef,undef,$table,$column))) {
@@ -341,7 +352,9 @@ sub begin
 	my $self = shift;
 
 
-	$self->_check();
+	if ($self->_check()) {
+		return undef;
+	}
 
 	$self->{_in_transaction}++;
 
@@ -369,6 +382,10 @@ sub commit
 {
 	my $self = shift;
 
+
+	if ($self->_check()) {
+		return undef;
+	}
 
 	# Reduce level
 	$self->{_in_transaction}--;
@@ -400,6 +417,11 @@ sub rollback
 {
 	my $self = shift;
 
+
+	if ($self->_check()) {
+		$self->{_in_transaction}--;
+		return undef;
+	}
 
 	# If we at top level, return success
 	if ($self->{_in_transaction} < 1) {

@@ -1,5 +1,5 @@
 # Common database layer module
-# Copyright (C) 2009-2011, AllWorldIT
+# Copyright (C) 2009-2014, AllWorldIT
 # Copyright (C) 2008, LinuxRulz
 # Copyright (C) 2005-2007 Nigel Kukard  <nkukard@lbsd.net>
 #
@@ -32,6 +32,7 @@ require Exporter;
 our (@ISA,@EXPORT);
 @ISA = qw(Exporter);
 @EXPORT = qw(
+	DBInit
 	DBConnect
 	DBSelect
 	DBDo
@@ -93,16 +94,70 @@ sub Error
 
 
 
+## @fn DBInit($dbconfig)
+# Initialize the database for use
+#
+# @param DSN Database DSN
+# @li DSN - Database DSN
+# @li Username - Optional database username
+# @li Password - Optional database password
+# @li TablePrefix - Optional database table prefix
+sub DBInit
+{
+	my $dbconfig = shift;
+
+
+	if (!defined($dbconfig)) {
+		setError("The dbconfig hash is not defined");
+		return undef;
+	}
+
+	if (ref($dbconfig) ne "HASH") {
+		setError("The dbconfig option is not a hash");
+		return undef;
+	}
+
+	if (!defined($dbconfig->{'DSN'})) {
+		setError("The dbconfig hash does not contain 'DSN'");
+		return undef;
+	}
+
+	# Check if we created
+	$dbh = awitpt::db::dbilayer->new($dbconfig->{'DSN'},$dbconfig->{'Username'},$dbconfig->{'Password'},
+			$dbconfig->{'TablePrefix'});
+
+	return $dbh;
+}
+
+
+
+## @fn DBInit($dbconfig)
+# Initialize the database for use
+#
+sub DBConnect
+{
+	my $res;
+
+	if ($res = $dbh->connect()) {
+		setError($dbh->Error());
+	}
+
+	return $res;
+}
+
+
+
 ## @fn setHandle($handle)
 # Initialize database handle
 #
 # @param handle Set internal database handle we use
 sub setHandle
 {
-		my $handle = shift;
+	my $handle = shift;
 
-		$dbh = $handle;
+	$dbh = $handle;
 }
+
 
 
 ## @fn DBSelect($query,@params)
@@ -129,6 +184,7 @@ sub DBSelect
 
 	return $sth;
 }
+
 
 
 ## @fn DBDo($command)
@@ -170,12 +226,15 @@ sub DBDo
 	# Prepare query
 	my $sth;
 	if (!($sth = $dbh->do($command,@data))) {
+		# Remove newlines...
+		$command =~ s/(\n|\s{2,})/ /g;
 		setError("Error executing command '$command': ".$dbh->Error());
 		return undef;
 	}
 
 	return $sth;
 }
+
 
 
 ## @fn DBLastInsertID($table,$column)
@@ -200,6 +259,7 @@ sub DBLastInsertID
 }
 
 
+
 ## @fn DBBegin
 # Function to begin a transaction
 #
@@ -214,6 +274,7 @@ sub DBBegin
 
 	return $res;
 }
+
 
 
 ## @fn DBCommit
@@ -232,6 +293,7 @@ sub DBCommit
 }
 
 
+
 ## @fn DBRollback
 # Function to rollback a transaction
 #
@@ -246,6 +308,7 @@ sub DBRollback
 
 	return $res;
 }
+
 
 
 ## @fn DBQuote($variable)
@@ -263,6 +326,7 @@ sub DBQuote
 }
 
 
+
 ## @fn DBFreeRes($sth)
 # Function to cleanup DB query
 #
@@ -278,11 +342,13 @@ sub DBFreeRes
 }
 
 
+
 # Function to get table prefix
 sub DBTablePrefix
 {
 	return $dbh->table_prefix();
 }
+
 
 
 #
@@ -321,6 +387,7 @@ sub DBSelectNumResults
 
 	return $num_results;
 }
+
 
 
 ## @fn DBSelectSearch($query,$search,$filters,$sorts)
@@ -424,7 +491,8 @@ sub DBSelectSearch
 
 					# The comparison type must be defined
 					if (!defined($data->{'comparison'})) {
-						setError("Parameter 'search' element 'Filter' requires field data element 'comparison' for date field '$field'");
+						setError("Parameter 'search' element 'Filter' requires field data element 'comparison' for date field ".
+								"'$field'");
 						return (undef,-1);
 					}
 
@@ -467,7 +535,8 @@ sub DBSelectSearch
 
 					# The comparison type must be defined
 					if (!defined($data->{'comparison'})) {
-						setError("Parameter 'search' element 'Filter' requires field data element 'comparison' for numeric field '$field'");
+						setError("Parameter 'search' element 'Filter' requires field data element 'comparison' for numeric field ".
+								"'$field'");
 						return (undef,-1);
 					}
 
@@ -588,6 +657,7 @@ sub DBSelectSearch
 }
 
 
+
 # Convert a lower case array to mixed case
 sub hashifyLCtoMC
 {
@@ -606,7 +676,6 @@ sub hashifyLCtoMC
 
 	return $res;
 }
-
 
 
 
