@@ -1,17 +1,17 @@
 # Network IP Address Handling
 # Copyright (C) 2009-2011, AllWorldIT
 # Copyright (C) 2008, LinuxRulz
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
@@ -35,24 +35,24 @@ my $error = "";
 
 sub setError
 {
-    my $err = shift;
-    my ($package,$filename,$line) = caller;
-    my (undef,undef,undef,$subroutine) = caller(1);
+	my $err = shift;
+	my ($package,$filename,$line) = caller;
+	my (undef,undef,undef,$subroutine) = caller(1);
 
-    # Set error
-    $error = "$subroutine($line): $err";
+	# Set error
+	$error = "$subroutine($line): $err";
 }
 
 
 sub Error
 {
-    my $err = $error;
+	my $err = $error;
 
-    # Reset error
-    $error = "";
+	# Reset error
+	$error = "";
 
-    # Return error
-    return $err;
+	# Return error
+	return $err;
 }
 
 
@@ -128,7 +128,7 @@ sub to_bin
 	if ($self->{'ip_version'} == 6) {
 		my $cleanIP = $self->{'ip'};
 		$cleanIP =~ s/://g;
-   		$self->{'ip_bin'} = unpack('B128', pack('H32', $cleanIP));
+		$self->{'ip_bin'} = unpack('B128', pack('H32', $cleanIP));
 
 	} elsif ($self->{'ip_version'} == 4) {
 		$self->{'ip_bin'} = unpack('B32', pack('C4C4C4C4', split(/\./, $self->{'ip'})));
@@ -190,7 +190,7 @@ sub to_int
 
 
 # Get the network address
-sub to_network 
+sub to_network
 {
 	my $self = shift;
 
@@ -344,7 +344,7 @@ sub _clean_ip
 		# Check for invalid chars
 		if (!($self->{'raw_ip'} =~ m/^[\d\.]+$/)) {
 			setError("IPv4 address '".$self->{'raw_ip'}."' contains invalid characters");
-			return 0; 
+			return 0;
 		}
 
 		# Check for leading .
