@@ -29,8 +29,6 @@ package awitpt::netip;
 use strict;
 use warnings;
 
-use Math::BigInt;
-
 use Socket;
 BEGIN {
 	if (defined &Socket::inet_pton) {
