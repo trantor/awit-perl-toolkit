@@ -96,8 +96,7 @@ sub Error
 # @return dbilayer object, undef on error
 sub Init
 {
-	my $server = shift;
-	my $server_name = shift;
+	my ($server,$server_name) = @_;
 
 
 	if (!defined($server)) {
@@ -114,8 +113,7 @@ sub Init
 
 
 	# Check if we created
-	my $dbh = awitpt::db::dbilayer->new($dbconfig->{'DSN'},$dbconfig->{'Username'},$dbconfig->{'Password'},
-			$dbconfig->{'TablePrefix'});
+	my $dbh = awitpt::db::dbilayer->new($dbconfig);
 	return undef if (!defined($dbh));
 
 
@@ -126,14 +124,26 @@ sub Init
 ## @member new($dsn,$username,$password)
 # Class constructor
 #
-# @param dsn Data source name
-# @param username Username to use
-# @param password Password to use
+# @param settings Database settings hashref
+# @li DSN Data source name
+# @li Username Username to use
+# @li Password Password to use
+# @li TablePrefix Table prefix
+# @li IgnoreTransactions Flag to ignore transactions
+# @li SQLiteJournalMode SQLite: set journal mode
+# @li SQLiteCacheSize SQLite: set cache size
+# @li SQLiteSynchronous SQLite: set synchronous mode
 #
 # @return Constructed object, undef on error
 sub new
 {
-	my ($class,$dsn,$username,$password,$table_prefix) = @_;
+	my ($class,$settings) = @_;
+
+
+	# Check if we were given settings
+	if (!defined($settings)) {
+		setError("No database settings given");
+	}
 
 	# Iternals
 	my $self = {
@@ -152,13 +162,20 @@ sub new
 	};
 
 	# Set database parameters
-	if (defined($dsn)) {
-		$self->{_dsn} = $dsn;
-		$self->{_username} = $username;
-		$self->{_password} = $password;
-		$self->{_table_prefix} = $table_prefix if (defined($table_prefix) && $table_prefix ne "");
+	if (defined($settings->{'DSN'})) {
+		$self->{_dsn} = $settings->{'DSN'};
+		$self->{_username} = $settings->{'Username'};
+		$self->{_password} = $settings->{'Password'};
+		$self->{_table_prefix} = $settings->{'TablePrefix'} || "";
+
+		$self->{transactions_ignore} = $settings->{'IgnoreTransactions'};
+
+		$self->{'sqlite_journal_mode'} = $settings->{'SQLiteJournalMode'};
+		$self->{'sqlite_cache_size'} = $settings->{'SQLiteCacheSize'};
+		$self->{'sqlite_synchronous'} = $settings->{'SQLiteSynchronous'};
+
 	} else {
-		setError("Invalid DSN '$dsn' given");
+		setError("No DSN provided");
 		return undef;
 	}
 
@@ -199,6 +216,28 @@ sub connect
 
 	# Apon connect we are not in a transaction
 	$self->{_in_transaction} = 0;
+
+	# Check for SQLite options
+	if ($self->{_type} eq "sqlite") {
+		# Check for journal mode
+		if (defined($self->{'sqlite_journal_mode'})) {
+			if (!$self->do("PRAGMA journal_mode = ".$self->{'sqlite_journal_mode'})) {
+				return -1;
+			}
+		}
+		# Check for cache size
+		if (defined($self->{'sqlite_cache_size'})) {
+			if (!$self->do("PRAGMA cache_size = -".$self->{'sqlite_cache_size'})) {
+				return -1;
+			};
+		}
+		# Check for synchronous setting
+		if (defined($self->{'sqlite_synchronous'})) {
+			if (!$self->do("PRAGMA synchronous = ".$self->{'sqlite_synchronous'})) {
+				return -1;
+			}
+		}
+	}
 
 	return 0;
 }
@@ -363,6 +402,11 @@ sub begin
 		return 1;
 	}
 
+	# Check if we need to ignore transactions
+	if ($self->{transactions_ignore}) {
+		return 1;
+	}
+
 	# Begin
 	my $res;
 	if (!($res = $self->{_dbh}->begin_work())) {
@@ -398,6 +442,11 @@ sub commit
 	# Reset transaction depth to 0
 	$self->{_in_transaction} = 0;
 
+	# Check if we need to ignore transactions
+	if ($self->{transactions_ignore}) {
+		return 1;
+	}
+
 	# Commit
 	my $res;
 	if (!($res = $self->{_dbh}->commit())) {
@@ -429,6 +478,11 @@ sub rollback
 	}
 
 	$self->{_in_transaction} = 0;
+
+	# Check if we need to ignore transactions
+	if ($self->{transactions_ignore}) {
+		return 1;
+	}
 
 	# Rollback
 	my $res;
