@@ -123,8 +123,7 @@ sub DBInit
 	}
 
 	# Check if we created
-	$dbh = awitpt::db::dbilayer->new($dbconfig->{'DSN'},$dbconfig->{'Username'},$dbconfig->{'Password'},
-			$dbconfig->{'TablePrefix'});
+	$dbh = awitpt::db::dbilayer->new($dbconfig);
 
 	return $dbh;
 }
