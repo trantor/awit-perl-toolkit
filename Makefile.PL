@@ -1,5 +1,5 @@
-# Load improved CPAN libs
-# Copyright (C) 2011, AllWorldIT
+# Makefile
+# Copyright (C) 2014, AllWorldIT
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,14 +15,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-use strict;
-use warnings;
+use ExtUtils::MakeMaker;
 
+WriteMakefile(
+	NAME => 'awitpt',
+	VERSION_FROM => "lib/awitpt/version.pm",
 
-use lib qw( 
-	awitpt/CPAN/Class-Inspector-1.25/lib
-	awitpt/CPAN/SOAP-Lite-0.712/lib 
+	EXE_FILES => [qw( bin/convert-tsql )],
+	MAN3PODS => { },
 );
 
-
-1;
+# vim: ts=4
