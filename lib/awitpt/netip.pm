@@ -215,7 +215,8 @@ sub _ipv4_matcher {
 
     my $mask = $test->_cidr2mask_v4();
 
-    return ((inet_aton($test->{'ip'}) & $mask) eq (inet_aton($self->{'ip'}) & $mask));
+	# Make sure we return 1 or 0, not "" for failure
+	return ((inet_aton($test->{'ip'}) & $mask) eq (inet_aton($self->{'ip'}) & $mask)) ? 1 : 0;
 }
 
 
@@ -225,7 +226,8 @@ sub _ipv6_matcher {
 
     my $mask = $test->_cidr2mask_v6();
 
-    return ((inet_pton(AF_INET6,$test->{'ip'}) & $mask) eq (inet_pton(AF_INET6, $self->{'ip'}) & $mask));
+	# Make sure we return 1 or 0, not "" for failure
+	return ((inet_pton(AF_INET6,$test->{'ip'}) & $mask) eq (inet_pton(AF_INET6, $self->{'ip'}) & $mask)) ? 1 : 0;
 }
 
 
