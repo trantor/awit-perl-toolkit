@@ -109,17 +109,17 @@ sub DBInit
 
 	if (!defined($dbconfig)) {
 		setError("The dbconfig hash is not defined");
-		return undef;
+		return;
 	}
 
 	if (ref($dbconfig) ne "HASH") {
 		setError("The dbconfig option is not a hash");
-		return undef;
+		return;
 	}
 
 	if (!defined($dbconfig->{'DSN'})) {
 		setError("The dbconfig hash does not contain 'DSN'");
-		return undef;
+		return;
 	}
 
 	# Check if we created
@@ -178,7 +178,7 @@ sub DBSelect
 	my $sth;
 	if (!($sth = $dbh->select($query,@params))) {
 		setError("Error executing select: ".$dbh->Error());
-		return undef;
+		return;
 	}
 
 	return $sth;
@@ -211,7 +211,7 @@ sub DBDo
 			@params = @{$queryHash->{'*'}};
 		} else {
 			setError("Error executing, database type in query not fund and no '*' query found");
-			return undef;
+			return;
 		}
 	}
 
@@ -228,7 +228,7 @@ sub DBDo
 		# Remove newlines...
 		$command =~ s/(\n|\s{2,})/ /g;
 		setError("Error executing command '$command': ".$dbh->Error());
-		return undef;
+		return;
 	}
 
 	return $sth;
@@ -251,7 +251,7 @@ sub DBLastInsertID
 	my $res;
 	if (!($res = $dbh->lastInsertID(undef,undef,$table,$column))) {
 		setError("Error getting last inserted id: ".$dbh->Error());
-		return undef;
+		return;
 	}
 
 	return $res;
@@ -268,7 +268,7 @@ sub DBBegin
 	my $res;
 	if (!($res = $dbh->begin())) {
 		setError("Error beginning transaction: ".$dbh->Error());
-		return undef;
+		return;
 	}
 
 	return $res;
@@ -285,7 +285,7 @@ sub DBCommit
 	my $res;
 	if (!($res = $dbh->commit())) {
 		setError("Error committing transaction: ".$dbh->Error());
-		return undef;
+		return;
 	}
 
 	return $res;
@@ -302,7 +302,7 @@ sub DBRollback
 	my $res;
 	if (!($res = $dbh->rollback())) {
 		setError("Error rolling back transaction: ".$dbh->Error());
-		return undef;
+		return;
 	}
 
 	return $res;
@@ -370,14 +370,14 @@ sub DBSelectNumResults
 	my $sth;
 	if (!($sth = $dbh->select("SELECT COUNT(*) AS num_results $query"))) {
 		setError("Error executing select: ".$dbh->Error());
-		return undef;
+		return;
 	}
 
 	# Grab row
 	my $row = $sth->fetchrow_hashref();
 	if (!defined($row)) {
 		setError("Failed to get results from a select: ".$dbh->Error());
-		return undef;
+		return;
 	}
 
 	# Pull number
@@ -643,13 +643,13 @@ sub DBSelectSearch
 	(my $queryCount = $query) =~ s/^\s*SELECT\s.*\sFROM/FROM/is;
 	my $numResults = DBSelectNumResults("$queryCount $sqlWhere");
 	if (!defined($numResults)) {
-		return undef;
+		return;
 	}
 
 	# Add Start, Limit, Sort, Direction
 	my $sth = DBSelect("$query $sqlWhere $sqlOrderBy $sqlOrderByDirection $sqlLimit $sqlOffset");
 	if (!defined($sth)) {
-		return undef;
+		return;
 	}
 
 	return ($sth,$numResults);
@@ -664,7 +664,7 @@ sub hashifyLCtoMC
 
 
 	# If we undefined, return
-	return undef if (!defined($record));
+	return if (!defined($record));
 
 	my $res;
 

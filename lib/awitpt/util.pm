@@ -128,7 +128,7 @@ sub isNumber
 
 	# Make sure we're not a ref
 	if (!isVariable($var)) {
-		return undef;
+		return;
 	}
 
 	# Strip leading 0's
@@ -152,7 +152,7 @@ sub isNumber
 
 	}
 
-	return undef;
+	return;
 }
 
 
@@ -169,7 +169,7 @@ sub isHash
 
 	# A hash cannot be undef?
 	if (!defined($var)) {
-		return undef;
+		return;
 	}
 
 	return (ref($var) eq "HASH");
@@ -190,7 +190,7 @@ sub isVariable
 
 	# A variable cannot be undef?
 	if (!defined($var)) {
-		return undef;
+		return;
 	}
 
 	return (ref($var) eq "");
@@ -215,7 +215,7 @@ sub isDomain
 
 	# Make sure we're not a ref
 	if (!isVariable($var)) {
-		return undef;
+		return;
 	}
 
 	# Lowercase it
@@ -225,7 +225,7 @@ sub isDomain
 		return $var;
 	}
 
-	return undef;
+	return;
 }
 
 
@@ -246,7 +246,7 @@ sub isUsername
 
 	# Make sure we're not a ref
 	if (!isVariable($var)) {
-		return undef;
+		return;
 	}
 
 	# Lowercase it
@@ -266,7 +266,7 @@ sub isUsername
 		}
 	}
 
-	return undef;
+	return;
 }
 
 
@@ -287,7 +287,7 @@ sub isDatabaseName
 
 	# Make sure we're not a ref
 	if (!isVariable($var)) {
-		return undef;
+		return;
 	}
 
 	# Lowercase it
@@ -297,7 +297,7 @@ sub isDatabaseName
 		return $var;
 	}
 
-	return undef;
+	return;
 }
 
 
@@ -354,7 +354,7 @@ sub isBoolean
 
 	# Check if we're defined
 	if (!isVariable($var)) {
-		return undef;
+		return;
 	}
 
 	# Nuke whitespaces
@@ -369,7 +369,7 @@ sub isBoolean
 	}
 
 	# Invalid or unknown
-	return undef;
+	return;
 }
 
 
@@ -387,7 +387,7 @@ sub isDate
 
 	# Make sure we're not a ref
 	if (!isVariable($date)) {
-		return undef;
+		return;
 	}
 
 	# Check options
@@ -403,65 +403,65 @@ sub isDate
 	# Year
 	if (($options & ISDATE_YEAR) == ISDATE_YEAR) {
 		if (!defined($year)) {
-			return undef;
+			return;
 		}
 		# Insane?
 		if ($year < 1900) {
-			return undef;
+			return;
 		}
 		push(@result,$year);
 	}
 	# Month
 	if (($options & ISDATE_MONTH) == ISDATE_MONTH) {
 		if (!defined($month)) {
-			return undef;
+			return;
 		}
 		# Check month is valid
 		if (!($month > 0 && $month < 13)) {
-			return undef;
+			return;
 		}
 		push(@result,$month);
 	}
 	# Day
 	if (($options & ISDATE_DAY) == ISDATE_DAY) {
 		if (!defined($day)) {
-			return undef;
+			return;
 		}
 		# Basic check
 		if (!($day > 0 && $day < 32)) {
-			return undef;
+			return;
 		}
 		# Reject 31st of a month with 30 days
 		if ($day == 31 && ($month == 4 || $month == 6 || $month == 9 || $month == 11)) {
-			return undef;
+			return;
 		# Reject February 30th or 31st
 		} elsif ($day >= 30 && $month == 2) {
-			return undef;
+			return;
 		# February 29th outside a leap year
 		} elsif ($month == 2 && $day == 29 && !($year % 4 == 0 && ($year % 100 != 0 || $year % 400 == 0))) {
-			return undef;
+			return;
 		}
 		push(@result,$day);
 	}
 	# Time
 	if (($options & ISDATE_TIME) == ISDATE_TIME) {
 		if (!(defined($hour) && defined($min))) {
-			return undef;
+			return;
 		}
 		# Hour
 		if (!($hour >= 0 && $hour < 25)) {
-			return undef;
+			return;
 		}
 		push(@result,$hour);
 		# Min
 		if (!($min >= 0 && $min < 61)) {
-			return undef;
+			return;
 		}
 		push(@result,$min);
 		# Sec
 		if (defined($sec)) {
 			if (!$sec >= 0 && $sec < 61) {
-				return undef;
+				return;
 			}
 			push(@result,$sec);
 		}
@@ -469,7 +469,7 @@ sub isDate
 	# Unix time
 	if (($options & ISDATE_UNIX) == ISDATE_UNIX) {
 		if (!isNumber($date)) {
-			return undef;
+			return;
 		}
 		return $date;
 	}
@@ -491,12 +491,12 @@ sub isEmailSpec
 
 	# Make sure we're defined
 	if (!defined($var)) {
-		return undef;
+		return;
 	}
 
 	# Make sure we're not a ref
 	if (!isVariable($var)) {
-		return undef;
+		return;
 	}
 
 	# Check IPv4
@@ -510,25 +510,25 @@ sub isEmailSpec
 		my ($user,$domain) = ($1,$2);
 
 		if (!(defined($user) || defined($domain))) {
-			return undef;
+			return;
 		}
 
 		if (defined($user)) {
 			if (!$user =~ /^\S+$/i) {
-				return undef;
+				return;
 			}
 		}
 
 		if (defined($domain)) {
 			if (!$domain =~ /^(?:[a-z0-9\-_\*]+\.)+[a-z0-9]+$/i) {
-				return undef;
+				return;
 			}
 		}
 
 		return $var;
 	}
 
-	return undef;
+	return;
 }
 
 
@@ -546,7 +546,7 @@ sub isIPv4
 
 	# Make sure we're not a ref
 	if (!isVariable($var)) {
-		return undef;
+		return;
 	}
 
 	# Lowercase it
@@ -557,7 +557,7 @@ sub isIPv4
 		return $var;
 	}
 
-	return undef;
+	return;
 }
 
 

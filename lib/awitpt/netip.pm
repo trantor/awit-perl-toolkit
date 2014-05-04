@@ -94,7 +94,7 @@ sub new
 		$self->{'ip_version'} = 4;
 	} else {
 		setError("Failed to guess IP address version");
-		return undef;
+		return;
 	}
 
 	$self->{'raw_ip'} = $ip;
@@ -104,7 +104,7 @@ sub new
 
 	# Clean the raw IP
 	if (!$self->_clean_ip()) {
-		return undef;
+		return;
 	}
 
 	return $self;
@@ -238,7 +238,7 @@ sub is_within
 
 	# We can only compare IPs of same type
 	if ($self->{'ip_version'} != $test->{'ip_version'}) {
-		return undef;
+		return;
 	}
 
 	# Check which matcher to use
@@ -248,7 +248,7 @@ sub is_within
 		return $self->_ipv6_matcher($test);
 	}
 
-	return undef;
+	return;
 }
 
 

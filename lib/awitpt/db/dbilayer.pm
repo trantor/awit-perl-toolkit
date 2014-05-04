@@ -101,11 +101,11 @@ sub Init
 
 	if (!defined($server)) {
 		setError("Server object undefined");
-		return undef;
+		return;
 	}
 	if (!defined($server_name)) {
 		setError("Server name undefined");
-		return undef;
+		return;
 	}
 
 
@@ -114,7 +114,7 @@ sub Init
 
 	# Check if we created
 	my $dbh = awitpt::db::dbilayer->new($dbconfig);
-	return undef if (!defined($dbh));
+	return if (!defined($dbh));
 
 
 	return $dbh;
@@ -176,7 +176,7 @@ sub new
 
 	} else {
 		setError("No DSN provided");
-		return undef;
+		return;
 	}
 
 	# Try grab database type
@@ -298,20 +298,20 @@ sub select
 
 
 	if ($self->_check()) {
-		return undef;
+		return;
 	}
 
 	# Prepare query
 	my $sth;
 	if (!($sth = $self->{_dbh}->prepare($query))) {
 		$self->{_error} = $self->{_dbh}->errstr;
-		return undef;
+		return;
 	}
 
 	# Check for execution error
 	if (!$sth->execute(@params)) {
 		$self->{_error} = $self->{_dbh}->errstr;
-		return undef;
+		return;
 	}
 
 	return $sth;
@@ -330,7 +330,7 @@ sub do
 
 
 	if ($self->_check()) {
-		return undef;
+		return;
 	}
 
 #	# Build single command instead of using binding of params
@@ -348,7 +348,7 @@ sub do
 #	if (!($sth = $self->{_dbh}->do($command))) {
 	if (!($sth = $self->{_dbh}->do($command,undef,@params))) {
 		$self->{_error} = $self->{_dbh}->errstr;
-		return undef;
+		return;
 	}
 
 	return $sth;
@@ -368,14 +368,14 @@ sub lastInsertID
 
 
 	if ($self->_check()) {
-		return undef;
+		return;
 	}
 
 	# Get last insert id
 	my $res;
 	if (!($res = $self->{_dbh}->last_insert_id(undef,undef,$table,$column))) {
 		$self->{_error} = $self->{_dbh}->errstr;
-		return undef;
+		return;
 	}
 
 	return $res;
@@ -392,7 +392,7 @@ sub begin
 
 
 	if ($self->_check()) {
-		return undef;
+		return;
 	}
 
 	$self->{_in_transaction}++;
@@ -411,7 +411,7 @@ sub begin
 	my $res;
 	if (!($res = $self->{_dbh}->begin_work())) {
 		$self->{_error} = $self->{_dbh}->errstr;
-		return undef;
+		return;
 	}
 
 	return $res;
@@ -428,7 +428,7 @@ sub commit
 
 
 	if ($self->_check()) {
-		return undef;
+		return;
 	}
 
 	# Reduce level
@@ -451,7 +451,7 @@ sub commit
 	my $res;
 	if (!($res = $self->{_dbh}->commit())) {
 		$self->{_error} = $self->{_dbh}->errstr;
-		return undef;
+		return;
 	}
 
 	return $res;
@@ -469,7 +469,7 @@ sub rollback
 
 	if ($self->_check()) {
 		$self->{_in_transaction}--;
-		return undef;
+		return;
 	}
 
 	# If we at top level, return success
@@ -488,7 +488,7 @@ sub rollback
 	my $res;
 	if (!($res = $self->{_dbh}->rollback())) {
 		$self->{_error} = $self->{_dbh}->errstr;
-		return undef;
+		return;
 	}
 
 	return $res;
