@@ -985,11 +985,11 @@ sub send_file
 
 
 	my $opened = 0;
-	local(*FILE);
+	local(*$FH);
 	if (!ref($file)) {
-		open(FILE, $file) || return undef;
-		binmode(FILE);
-		$file = \*FILE;
+		open(my $FH,"r","< $file") || return;
+		binmode($FH);
+		$file = \*$FH;
 		$opened++;
 	}
 	my $cnt = 0;
