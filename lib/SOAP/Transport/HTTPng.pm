@@ -103,7 +103,6 @@ sub handle_SOAP_Lite {
             push @parameters, $request
                 if UNIVERSAL::isa($class => 'SOAP::Server::Parameters');
 
-            no strict qw(refs);
             SOAP::Server::Object->references(
                 defined $parameters[0]
                 && ref $parameters[0]
