@@ -9,7 +9,10 @@
 use strict;
 use warnings;
 
+# Main package
+package SOAP::Transport::HTTPng;
 our $VERSION = 0.010;
+
 
 
 # Overrided server so we can intercept sensitive info
