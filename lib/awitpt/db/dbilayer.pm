@@ -88,7 +88,7 @@ sub Error
 
 
 ## @fn Init($server,$server_name)
-# Initialize class and return a fully connected object
+# Initialize a class and return a dbilayer object
 #
 # @param server Server object
 # @param server_name Name of server

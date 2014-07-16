@@ -154,7 +154,7 @@ sub setHandle
 {
 	my $handle = shift;
 
-	$dbh = $handle;
+	return $dbh = $handle;
 }
 
 
