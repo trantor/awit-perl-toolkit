@@ -479,13 +479,13 @@ sub isDate
 
 
 
-## @fn isEmailSpec($var)
-# Check if a variable is a valid email spec
+## @fn isEmail($var)
+# Check if a variable is a valid email address
 #
 # @param var Variable to check
 #
-# @return specification or undef
-sub isEmailSpec
+# @return $var or undef
+sub isEmail
 {
 	my $var = shift;
 
