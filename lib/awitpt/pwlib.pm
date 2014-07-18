@@ -381,7 +381,7 @@ sub pwlib_parse {
 		return ($scheme,$password,'');
 
 	# 3 - hashed pw with salt
-	}  elsif ( $scheme =~ m/^(smd5|ssha|ssha256|ssha512)/ ) {
+	}  elsif ($scheme =~ m/^(smd5|ssha|ssha256|ssha512)/) {
 		# HASHLEN can be computed by doing
 		# $hashlen = length(Digest::*::digest('string'));
 		my $hashlen = $HASHLEN{$scheme};
@@ -442,9 +442,9 @@ sub pwlib_pwgen {
 
 ## @internal
 # @fn _make_salt($len)
-# This function is used to set the last error for this class
+# Internal function to generate a salt
 #
-# @param err Error message
+# @return Returns a salt of 4 characters long
 sub _make_salt {
 	return pwlib_pwgen(4);
 }
