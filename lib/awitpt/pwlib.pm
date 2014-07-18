@@ -161,7 +161,7 @@ sub crypt_smd5 {
 
 
 	# Make a salt if we don't have one
-	$salt ||= &make_salt();
+	$salt ||= &_make_salt();
 
 	return "{SMD5}" . base64_pad( encode_base64( Digest::MD5::md5( $password . $salt ) . $salt, '' ) );
 }
@@ -195,7 +195,7 @@ sub crypt_ssha {
 
 
 	# Make a salt if we don't have one
-	$salt ||= &make_salt();
+	$salt ||= &_make_salt();
 
 	return "{SSHA}" . encode_base64( Digest::SHA::sha1( $password . $salt ) . $salt, '' );
 }
@@ -229,7 +229,7 @@ sub crypt_ssha256 {
 
 
 	# Make a salt if we don't have one
-	$salt ||= &make_salt();
+	$salt ||= &_make_salt();
 
 	return "{SSHA256}" . encode_base64( Digest::SHA::sha256( $password . $salt ) . $salt, '' );
 }
@@ -263,7 +263,7 @@ sub crypt_ssha512 {
 
 
 	# Make a salt if we don't have one
-	$salt ||= &make_salt();
+	$salt ||= &_make_salt();
 
 	return "{SSHA512}" . encode_base64( Digest::SHA::sha512( $password . $salt ) . $salt, '' );
 }
@@ -287,7 +287,7 @@ sub pwlib_crypt {
 	$scheme =~ s/-/_/g;
 
 	# Make a salt if we don't have one
-	$salt ||= &make_salt();
+	$salt ||= &_make_salt();
 
 
 	# Check how we going to crypt it
