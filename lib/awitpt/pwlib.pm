@@ -432,7 +432,6 @@ sub pwlib_pwgen {
 	# If length is not specified set it to 16
 	$length ||= 16;
 
-	srand();
 	my $password = join( '', map { $PWCHARS{'alphanum'}[ rand( $#{ $PWCHARS{'alphanum'} } ) ] } 0 .. $length - 1 );
 
 	return $password;
