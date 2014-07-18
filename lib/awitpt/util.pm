@@ -54,6 +54,7 @@ our (@ISA,@EXPORT,@EXPORT_OK);
 	getHashChanges
 
 	toHex
+	base64_pad
 
 	parseFormContent
 	parseURIQuery
@@ -681,6 +682,21 @@ sub toHex
 {
 	my $decimal = shift;
 	return sprintf('%x',$decimal);
+}
+
+
+
+## @fn base64_pad
+# Returns a padded base64 string
+sub base64_pad {
+	my $digest = shift;
+
+
+	while ( length($digest) % 4 ) {
+		$digest .= '=';
+	}
+
+	return $digest;
 }
 
 
