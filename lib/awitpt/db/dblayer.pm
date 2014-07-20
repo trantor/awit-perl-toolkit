@@ -61,20 +61,25 @@ my $dbh = undef;
 # Our current error message
 my $error = "";
 
+
+
 ## @internal
-# @fn setError($err)
+# @fn _setError($err)
 # This function is used to set the last error for this class
 #
 # @param err Error message
-sub setError
+sub _setError
 {
 	my $err = shift;
 	my ($package,$filename,$line) = caller;
 	my (undef,undef,undef,$subroutine) = caller(1);
 
+
 	# Set error
 	$error = "$subroutine($line): $err";
 }
+
+
 
 ## @internal
 # @fn Error
@@ -108,17 +113,17 @@ sub DBInit
 
 
 	if (!defined($dbconfig)) {
-		setError("The dbconfig hash is not defined");
+		_setError("The dbconfig hash is not defined");
 		return;
 	}
 
 	if (ref($dbconfig) ne "HASH") {
-		setError("The dbconfig option is not a hash");
+		_setError("The dbconfig option is not a hash");
 		return;
 	}
 
 	if (!defined($dbconfig->{'DSN'})) {
-		setError("The dbconfig hash does not contain 'DSN'");
+		_setError("The dbconfig hash does not contain 'DSN'");
 		return;
 	}
 
@@ -138,7 +143,7 @@ sub DBConnect
 	my $res;
 
 	if ($res = $dbh->connect()) {
-		setError($dbh->Error());
+		_setError($dbh->Error());
 	}
 
 	return $res;
@@ -153,6 +158,7 @@ sub DBConnect
 sub setHandle
 {
 	my $handle = shift;
+
 
 	return $dbh = $handle;
 }
@@ -169,6 +175,7 @@ sub DBSelect
 {
 	my ($query,@params) = @_;
 
+
 	my $table_prefix = $dbh->table_prefix();
 
 	# Replace table prefix macro
@@ -177,7 +184,7 @@ sub DBSelect
 	# Prepare query
 	my $sth;
 	if (!($sth = $dbh->select($query,@params))) {
-		setError("Error executing select: ".$dbh->Error());
+		_setError("Error executing select: ".$dbh->Error());
 		return;
 	}
 
@@ -210,7 +217,7 @@ sub DBDo
 		} elsif (defined($queryHash->{'*'})) {
 			@params = @{$queryHash->{'*'}};
 		} else {
-			setError("Error executing, database type in query not fund and no '*' query found");
+			_setError("Error executing, database type in query not fund and no '*' query found");
 			return;
 		}
 	}
@@ -227,7 +234,7 @@ sub DBDo
 	if (!($sth = $dbh->do($command,@data))) {
 		# Remove newlines...
 		$command =~ s/(\n|\s{2,})/ /g;
-		setError("Error executing command '$command': ".$dbh->Error());
+		_setError("Error executing command '$command': ".$dbh->Error());
 		return;
 	}
 
@@ -250,7 +257,7 @@ sub DBLastInsertID
 
 	my $res;
 	if (!($res = $dbh->lastInsertID(undef,undef,$table,$column))) {
-		setError("Error getting last inserted id: ".$dbh->Error());
+		_setError("Error getting last inserted id: ".$dbh->Error());
 		return;
 	}
 
@@ -267,7 +274,7 @@ sub DBBegin
 {
 	my $res;
 	if (!($res = $dbh->begin())) {
-		setError("Error beginning transaction: ".$dbh->Error());
+		_setError("Error beginning transaction: ".$dbh->Error());
 		return;
 	}
 
@@ -284,7 +291,7 @@ sub DBCommit
 {
 	my $res;
 	if (!($res = $dbh->commit())) {
-		setError("Error committing transaction: ".$dbh->Error());
+		_setError("Error committing transaction: ".$dbh->Error());
 		return;
 	}
 
@@ -301,7 +308,7 @@ sub DBRollback
 {
 	my $res;
 	if (!($res = $dbh->rollback())) {
-		setError("Error rolling back transaction: ".$dbh->Error());
+		_setError("Error rolling back transaction: ".$dbh->Error());
 		return;
 	}
 
@@ -369,14 +376,14 @@ sub DBSelectNumResults
 	# Prepare query
 	my $sth;
 	if (!($sth = $dbh->select("SELECT COUNT(*) AS num_results $query"))) {
-		setError("Error executing select: ".$dbh->Error());
+		_setError("Error executing select: ".$dbh->Error());
 		return;
 	}
 
 	# Grab row
 	my $row = $sth->fetchrow_hashref();
 	if (!defined($row)) {
-		setError("Failed to get results from a select: ".$dbh->Error());
+		_setError("Failed to get results from a select: ".$dbh->Error());
 		return;
 	}
 
@@ -435,20 +442,20 @@ sub DBSelectSearch
 	if (defined($search) && ref($search)) {
 		# Check it is a hash
 		if (ref($search) ne "HASH") {
-			setError("Parameter 'search' is not a hashtable");
+			_setError("Parameter 'search' is not a HASH");
 			return (undef,-1);
 		}
 		# Check if we need to filter
 		if (defined($search->{'Filter'})) {
 			# We need filters in order to use filtering
 			if (!defined($filters)) {
-				setError("Parameter 'search' element 'Filter' requires 'filters' to be defined");
+				_setError("Parameter 'search' element 'Filter' requires 'filters' to be defined");
 				return (undef,-1);
 			}
 
 			# Check type of Filter
 			if (ref($search->{'Filter'}) ne "ARRAY") {
-				setError("Parameter 'search' element 'Filter' is of invalid type, it must be an ARRAY'");
+				_setError("Parameter 'search' element 'Filter' is of invalid type, it must be an ARRAY'");
 				return (undef,-1);
 			}
 
@@ -460,16 +467,16 @@ sub DBSelectSearch
 
 				# Check if field is in our allowed filters
 				if (!defined($filters->{$field})) {
-					setError("Parameter 'search' element 'Filter' has invalid field item '$field' according to 'filters'");
+					_setError("Parameter 'search' element 'Filter' has invalid field item '$field' according to 'filters'");
 					return (undef,-1);
 				}
 				# Check data
 				if (!defined($data->{'type'})) {
-					setError("Parameter 'search' element 'Filter' requires field data element 'type' for field '$field'");
+					_setError("Parameter 'search' element 'Filter' requires field data element 'type' for field '$field'");
 					return (undef,-1);
 				}
 				if (!defined($data->{'value'})) {
-					setError("Parameter 'search' element 'Filter' requires field data element 'value' for field '$field'");
+					_setError("Parameter 'search' element 'Filter' requires field data element 'value' for field '$field'");
 					return (undef,-1);
 				}
 
@@ -490,7 +497,7 @@ sub DBSelectSearch
 
 					# The comparison type must be defined
 					if (!defined($data->{'comparison'})) {
-						setError("Parameter 'search' element 'Filter' requires field data element 'comparison' for date field ".
+						_setError("Parameter 'search' element 'Filter' requires field data element 'comparison' for date field ".
 								"'$field'");
 						return (undef,-1);
 					}
@@ -534,7 +541,7 @@ sub DBSelectSearch
 
 					# The comparison type must be defined
 					if (!defined($data->{'comparison'})) {
-						setError("Parameter 'search' element 'Filter' requires field data element 'comparison' for numeric field ".
+						_setError("Parameter 'search' element 'Filter' requires field data element 'comparison' for numeric field ".
 								"'$field'");
 						return (undef,-1);
 					}
@@ -586,7 +593,7 @@ sub DBSelectSearch
 		if (defined($search->{'Start'})) {
 			# Check if Start is valid
 			if ($search->{'Start'} < 0) {
-				setError("Parameter 'search' element 'Start' invalid value '".$search->{'Start'}."'");
+				_setError("Parameter 'search' element 'Start' invalid value '".$search->{'Start'}."'");
 				return (undef,-1);
 			}
 
@@ -597,7 +604,7 @@ sub DBSelectSearch
 		if (defined($search->{'Limit'})) {
 			# Check if Limit is valid
 			if ($search->{'Limit'} < 1) {
-				setError("Parameter 'search' element 'Limit' invalid value '".$search->{'Limit'}."'");
+				_setError("Parameter 'search' element 'Limit' invalid value '".$search->{'Limit'}."'");
 				return (undef,-1);
 			}
 
@@ -608,13 +615,13 @@ sub DBSelectSearch
 		if (defined($search->{'Sort'})) {
 			# We need sorts in order to use sorting
 			if (!defined($sorts)) {
-				setError("Parameter 'search' element 'Filter' requires 'filters' to be defined");
+				_setError("Parameter 'search' element 'Filter' requires 'filters' to be defined");
 				return (undef,-1);
 			}
 
 			# Check if sort is defined
 			if (!defined($sorts->{$search->{'Sort'}})) {
-				setError("Parameter 'search' element 'Sort' invalid item '".$search->{'Sort'}."' according to 'sorts'");
+				_setError("Parameter 'search' element 'Sort' invalid item '".$search->{'Sort'}."' according to 'sorts'");
 				return (undef,-1);
 			}
 
@@ -632,7 +639,7 @@ sub DBSelectSearch
 					$sqlOrderByDirection = "DESC";
 
 				} else {
-					setError("Parameter 'search' element 'SortDirection' invalid value '".$search->{'SortDirection'}."'");
+					_setError("Parameter 'search' element 'SortDirection' invalid value '".$search->{'SortDirection'}."'");
 					return (undef,-1);
 				}
 			}

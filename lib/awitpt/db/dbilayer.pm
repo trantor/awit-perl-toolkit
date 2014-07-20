@@ -38,11 +38,11 @@ my $error = "";
 
 
 ## @internal
-# @fn setError($err)
+# @fn _setError($err)
 # This function is used to set the last error for this class
 #
 # @param err Error message
-sub setError
+sub _setError
 {
 	my $err = shift;
 	my ($package,$filename,$line) = caller;
@@ -51,6 +51,8 @@ sub setError
 	# Set error
 	$error = "$subroutine($line): $err";
 }
+
+
 
 ## @fn internalError
 # Return current module error message
@@ -68,6 +70,7 @@ sub internalError
 }
 
 
+
 ## @member Error
 # Return current object error message
 #
@@ -76,10 +79,10 @@ sub Error
 {
 	my $self = shift;
 
-	my $err = $self->{_error};
+	my $err = $self->{'_error'};
 
 	# Reset error
-	$self->{_error} = "";
+	$self->{'_error'} = "";
 
 	# Return error
 	return $err;
@@ -100,25 +103,23 @@ sub Init
 
 
 	if (!defined($server)) {
-		setError("Server object undefined");
+		_setError("Server object undefined");
 		return;
 	}
 	if (!defined($server_name)) {
-		setError("Server name undefined");
+		_setError("Server name undefined");
 		return;
 	}
 
-
 	my $dbconfig = $server->{$server_name}->{'database'};
-
 
 	# Check if we created
 	my $dbh = awitpt::db::dbilayer->new($dbconfig);
 	return if (!defined($dbh));
 
-
 	return $dbh;
 }
+
 
 
 ## @member new($dsn,$username,$password)
@@ -142,7 +143,7 @@ sub new
 
 	# Check if we were given settings
 	if (!defined($settings)) {
-		setError("No database settings given");
+		_setError("No database settings given");
 	}
 
 	# Iternals
@@ -166,16 +167,16 @@ sub new
 		$self->{_dsn} = $settings->{'DSN'};
 		$self->{_username} = $settings->{'Username'};
 		$self->{_password} = $settings->{'Password'};
-		$self->{_table_prefix} = $settings->{'TablePrefix'} || "";
+		$self->{'_table_prefix'} = $settings->{'TablePrefix'} || "";
 
-		$self->{transactions_ignore} = $settings->{'IgnoreTransactions'};
+		$self->{'transactions_ignore'} = $settings->{'IgnoreTransactions'};
 
 		$self->{'sqlite_journal_mode'} = $settings->{'SQLiteJournalMode'};
 		$self->{'sqlite_cache_size'} = $settings->{'SQLiteCacheSize'};
 		$self->{'sqlite_synchronous'} = $settings->{'SQLiteSynchronous'};
 
 	} else {
-		setError("No DSN provided");
+		_setError("No DSN provided");
 		return;
 	}
 
@@ -201,7 +202,7 @@ sub connect
 	my $self = shift;
 
 
-	$self->{_dbh} = DBI->connect($self->{_dsn}, $self->{_username}, $self->{_password}, {
+	$self->{'_dbh'} = DBI->connect($self->{_dsn}, $self->{_username}, $self->{_password}, {
 			'AutoCommit' => 1,
 			'PrintError' => 0,
 			'RaiseError' => 0,
@@ -209,13 +210,13 @@ sub connect
 	});
 
 	# Connect to database if we have to, check if we ok
-	if (!$self->{_dbh}) {
-		$self->{_error} = "Error connecting to database: $DBI::errstr";
+	if (!$self->{'_dbh'}) {
+		$self->{'_error'} = "Error connecting to database: $DBI::errstr";
 		return -1;
 	}
 
 	# Apon connect we are not in a transaction
-	$self->{_in_transaction} = 0;
+	$self->{'_in_transaction'} = 0;
 
 	# Check for SQLite options
 	if ($self->{_type} eq "sqlite") {
@@ -243,6 +244,7 @@ sub connect
 }
 
 
+
 ## @member type
 # Return database type
 #
@@ -255,6 +257,7 @@ sub type
 }
 
 
+
 ## @member _check
 # Check database connection and reconnect if we lost the connection
 sub _check
@@ -263,19 +266,19 @@ sub _check
 
 
 	# DB is disconnected if _dbh is not defined
-	if (!defined($self->{_dbh})) {
+	if (!defined($self->{'_dbh'})) {
 		goto RECONNECT;
 	}
 
 	# Try ping
-	if (!$self->{_dbh}->ping()) {
+	if (!$self->{'_dbh'}->ping()) {
 		# If we not in a transaction try connect
-		if ($self->{_in_transaction} == 0) {
+		if ($self->{'_in_transaction'} == 0) {
 			# Disconnect & reconnect
-			$self->{_dbh}->disconnect();
+			$self->{'_dbh'}->disconnect();
 			goto RECONNECT;
 		}
-		$self->{_error} = "Cannot reconnect to DB while inside transaction";
+		$self->{'_error'} = "Cannot reconnect to DB while inside transaction";
 		return -1;
 	}
 
@@ -284,6 +287,7 @@ sub _check
 RECONNECT:
 	return $self->connect();
 }
+
 
 
 ## @member select($query)
@@ -303,19 +307,20 @@ sub select
 
 	# Prepare query
 	my $sth;
-	if (!($sth = $self->{_dbh}->prepare($query))) {
-		$self->{_error} = $self->{_dbh}->errstr;
+	if (!($sth = $self->{'_dbh'}->prepare($query))) {
+		$self->{'_error'} = $self->{'_dbh'}->errstr;
 		return;
 	}
 
 	# Check for execution error
 	if (!$sth->execute(@params)) {
-		$self->{_error} = $self->{_dbh}->errstr;
+		$self->{'_error'} = $self->{'_dbh'}->errstr;
 		return;
 	}
 
 	return $sth;
 }
+
 
 
 ## @member do($command)
@@ -333,26 +338,16 @@ sub do
 		return;
 	}
 
-#	# Build single command instead of using binding of params
-#	# not all databases support binding, and not all support all
-#	# the places we use ?
-#	$command =~ s/\?/%s/g;
-#	# Map each element in params to the quoted value
-#	$command = sprintf($command,
-#		map { $self->quote($_) } @params
-#	);
-#use Data::Dumper; print STDERR Dumper($command);
-
-	# Prepare query
+	# Do the query
 	my $sth;
-#	if (!($sth = $self->{_dbh}->do($command))) {
-	if (!($sth = $self->{_dbh}->do($command,undef,@params))) {
-		$self->{_error} = $self->{_dbh}->errstr;
+	if (!($sth = $self->{'_dbh'}->do($command,undef,@params))) {
+		$self->{'_error'} = $self->{'_dbh'}->errstr;
 		return;
 	}
 
 	return $sth;
 }
+
 
 
 ## @method lastInsertID($table,$column)
@@ -373,13 +368,14 @@ sub lastInsertID
 
 	# Get last insert id
 	my $res;
-	if (!($res = $self->{_dbh}->last_insert_id(undef,undef,$table,$column))) {
-		$self->{_error} = $self->{_dbh}->errstr;
+	if (!($res = $self->{'_dbh'}->last_insert_id(undef,undef,$table,$column))) {
+		$self->{'_error'} = $self->{'_dbh'}->errstr;
 		return;
 	}
 
 	return $res;
 }
+
 
 
 ## @method begin
@@ -395,27 +391,28 @@ sub begin
 		return;
 	}
 
-	$self->{_in_transaction}++;
+	$self->{'_in_transaction'}++;
 
 	# Don't really start transaction if we more than 1 deep
-	if ($self->{_in_transaction} > 1) {
+	if ($self->{'_in_transaction'} > 1) {
 		return 1;
 	}
 
 	# Check if we need to ignore transactions
-	if ($self->{transactions_ignore}) {
+	if ($self->{'transactions_ignore'}) {
 		return 1;
 	}
 
 	# Begin
 	my $res;
-	if (!($res = $self->{_dbh}->begin_work())) {
-		$self->{_error} = $self->{_dbh}->errstr;
+	if (!($res = $self->{'_dbh'}->begin_work())) {
+		$self->{'_error'} = $self->{'_dbh'}->errstr;
 		return;
 	}
 
 	return $res;
 }
+
 
 
 ## @method commit
@@ -432,30 +429,31 @@ sub commit
 	}
 
 	# Reduce level
-	$self->{_in_transaction}--;
+	$self->{'_in_transaction'}--;
 
 	# If we not at top level, return success
-	if ($self->{_in_transaction} > 0) {
+	if ($self->{'_in_transaction'} > 0) {
 		return 1;
 	}
 
 	# Reset transaction depth to 0
-	$self->{_in_transaction} = 0;
+	$self->{'_in_transaction'} = 0;
 
 	# Check if we need to ignore transactions
-	if ($self->{transactions_ignore}) {
+	if ($self->{'transactions_ignore'}) {
 		return 1;
 	}
 
 	# Commit
 	my $res;
-	if (!($res = $self->{_dbh}->commit())) {
-		$self->{_error} = $self->{_dbh}->errstr;
+	if (!($res = $self->{'_dbh'}->commit())) {
+		$self->{'_error'} = $self->{'_dbh'}->errstr;
 		return;
 	}
 
 	return $res;
 }
+
 
 
 ## @method rollback
@@ -468,31 +466,32 @@ sub rollback
 
 
 	if ($self->_check()) {
-		$self->{_in_transaction}--;
+		$self->{'_in_transaction'}--;
 		return;
 	}
 
 	# If we at top level, return success
-	if ($self->{_in_transaction} < 1) {
+	if ($self->{'_in_transaction'} < 1) {
 		return 1;
 	}
 
-	$self->{_in_transaction} = 0;
+	$self->{'_in_transaction'} = 0;
 
 	# Check if we need to ignore transactions
-	if ($self->{transactions_ignore}) {
+	if ($self->{'transactions_ignore'}) {
 		return 1;
 	}
 
 	# Rollback
 	my $res;
-	if (!($res = $self->{_dbh}->rollback())) {
-		$self->{_error} = $self->{_dbh}->errstr;
+	if (!($res = $self->{'_dbh'}->rollback())) {
+		$self->{'_error'} = $self->{'_dbh'}->errstr;
 		return;
 	}
 
 	return $res;
 }
+
 
 
 ## @method quote($variable)
@@ -505,8 +504,9 @@ sub quote
 {
 	my ($self,$variable) = @_;
 
-	return $self->{_dbh}->quote($variable);
+	return $self->{'_dbh'}->quote($variable);
 }
+
 
 
 ## @method free($sth)
@@ -524,14 +524,14 @@ sub free
 }
 
 
+
 # Function to return the table prefix
 sub table_prefix
 {
 	my $self = shift;
 
-	return $self->{_table_prefix};
+	return $self->{'_table_prefix'};
 }
-
 
 
 
