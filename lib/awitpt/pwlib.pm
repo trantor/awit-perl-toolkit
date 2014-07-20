@@ -161,7 +161,7 @@ sub crypt_smd5 {
 
 
 	# Make a salt if we don't have one
-	$salt ||= &_make_salt();
+	$salt ||= _make_salt();
 
 	return "{SMD5}" . base64_pad( encode_base64( Digest::MD5::md5( $password . $salt ) . $salt, '' ) );
 }
@@ -195,7 +195,7 @@ sub crypt_ssha {
 
 
 	# Make a salt if we don't have one
-	$salt ||= &_make_salt();
+	$salt ||= _make_salt();
 
 	return "{SSHA}" . encode_base64( Digest::SHA::sha1( $password . $salt ) . $salt, '' );
 }
@@ -229,7 +229,7 @@ sub crypt_ssha256 {
 
 
 	# Make a salt if we don't have one
-	$salt ||= &_make_salt();
+	$salt ||= _make_salt();
 
 	return "{SSHA256}" . encode_base64( Digest::SHA::sha256( $password . $salt ) . $salt, '' );
 }
@@ -263,7 +263,7 @@ sub crypt_ssha512 {
 
 
 	# Make a salt if we don't have one
-	$salt ||= &_make_salt();
+	$salt ||= _make_salt();
 
 	return "{SSHA512}" . encode_base64( Digest::SHA::sha512( $password . $salt ) . $salt, '' );
 }
@@ -287,31 +287,31 @@ sub pwlib_crypt {
 	$scheme =~ s/-/_/g;
 
 	# Make a salt if we don't have one
-	$salt ||= &_make_salt();
+	$salt ||= _make_salt();
 
 
 	# Check how we going to crypt it
 	my $res;
 	if ($scheme eq 'ldap_md5') {
-		$res = &crypt_ldap_md5($password);
+		$res = crypt_ldap_md5($password);
 	} elsif ($scheme eq 'plain_md5') {
-		$res = &crypt_plain_md5($password);
+		$res = crypt_plain_md5($password);
 	} elsif ($scheme eq 'sha') {
-		$res = &crypt_sha($password);
+		$res = crypt_sha($password);
 	} elsif ($scheme eq 'sha256') {
-		$res = &crypt_sha256($password);
+		$res = crypt_sha256($password);
 	} elsif ($scheme eq 'sha512') {
-		$res = &crypt_sha512($password);
+		$res = crypt_sha512($password);
 	} elsif ($scheme eq 'smd5') {
-		$res = &crypt_smd5($password, $salt );
+		$res = crypt_smd5($password, $salt );
 	} elsif ($scheme eq 'ssha') {
-		$res = &crypt_ssha($password, $salt );
+		$res = crypt_ssha($password, $salt );
 	} elsif ($scheme eq 'ssha256') {
-		$res = &crypt_ssha256($password, $salt );
+		$res = crypt_ssha256($password, $salt );
 	} elsif ($scheme eq 'ssha512') {
-		$res = &crypt_ssha512($password, $salt );
+		$res = crypt_ssha512($password, $salt );
 	} elsif ($scheme eq 'cram_md5') {
-		$res = &crypt_cram_md5($password);
+		$res = crypt_cram_md5($password);
 	} elsif ($scheme eq 'plaintext' || $scheme eq "cleartext" || $scheme eq "plain") {
 		$res = "{CLEARTEXT}" . $password;
 	}
@@ -333,10 +333,10 @@ sub pwlib_verify {
 
 
 	# Grab scheme and salt
-	my ($scheme, undef, $salt) = &pwlib_parse($cryptPassword);
+	my ($scheme, undef, $salt) = pwlib_parse($cryptPassword);
 
 	# Crypt the password so we can verify
-	my $comparePassword = &pwlib_crypt($clearPassword, $scheme, $salt);
+	my $comparePassword = pwlib_crypt($clearPassword, $scheme, $salt);
 
 	# Compare and return 1 if they matched
 	if ($cryptPassword eq $comparePassword) {
@@ -395,7 +395,7 @@ sub pwlib_parse {
 		# The salted hash has the form: $saltedhash.$salt, so the first bytes is the hash
 		my $i = 0;
 		my @hash = ();
-		while ($i < $HASHLEN) {
+		while ($i < $hashlen) {
 			push(@hash, shift(@components));
 			$i++;
 		}
@@ -426,7 +426,7 @@ sub pwlib_parse {
 #
 # @return Generated password
 sub pwlib_pwgen {
-	my $length = shift
+	my $length = shift;
 
 
 	# If length is not specified set it to 16
