@@ -40,7 +40,7 @@ our (@ISA,@EXPORT,@EXPORT_OK);
 	isDatabaseName
 	isBoolean
 	isDate
-	isEmailSpec
+	isEmail
 	isIPv4
 
 	booleanize
