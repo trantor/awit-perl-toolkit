@@ -36,6 +36,8 @@ our (@ISA,@EXPORT);
 	DBConnect
 	DBSelect
 	DBDo
+	DBUpdate
+	DBInsert
 	DBLastInsertID
 	DBBegin
 	DBCommit
@@ -239,6 +241,102 @@ sub DBDo
 	}
 
 	return $sth;
+}
+
+
+
+## @fn DBUpdate($table,$id,%columnData)
+# Do an update of a database record
+#
+# @param table Table to update
+# @param id ID value of the row
+# @param columnData Hash of columns to update
+#
+# @return DBI statement handle, undef on error
+sub DBUpdate
+{
+	my ($table,$id,%data) = @_;
+
+
+	# Loop with columns and add them to our list of updates to do
+	my @columns;
+	my @values;
+	foreach my $column (keys %data) {
+		push(@columns,"$column = ?");
+		push(@values,$data{$column});
+	}
+
+	# Make sure we have at least one thing to update
+	if (@columns < 1) {
+		_setError("Nothing to update");
+		return;
+	}
+
+	# Update user
+	my $sth = DBDo(
+		sprintf('
+				UPDATE
+					@TP@%s
+				SET
+					%s
+				WHERE
+					ID = ?
+			',
+			$table,
+			join(',',@columns)
+		),
+		@values,
+		$id
+	);
+
+	return $sth;
+}
+
+
+
+## @fn DBInsert($table,%columnData)
+# Insert data into DB
+#
+# @param table Table to update
+# @param columnData Hash of columns to insert
+#
+# @return DBI statement handle, undef on error
+sub DBInsert
+{
+	my ($table,%data) = @_;
+
+
+	# Loop with columns and add them to our list
+	my @columns;
+	my @placeholders;
+	my @values;
+	foreach my $column (keys %data) {
+		push(@columns,$column);
+		push(@placeholders,'?');
+		push(@values,$data{$column});
+	}
+
+	# Add user
+	my $sth = DBDo(
+		sprintf('
+				INSERT INTO @TP@%s
+					(%s)
+				VALUES
+					(%s)
+			',
+			$table,
+			join(',',@columns),
+			join(',',@placeholders)
+		),
+		@values
+	);
+
+	# Return last insert ID if we succeeded
+	if (defined($sth)) {
+		return DBLastInsertID($table,"ID");
+	}
+
+	return;
 }
 
 
