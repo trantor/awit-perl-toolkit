@@ -47,9 +47,9 @@ our (@ISA,@EXPORT);
 
 	DBSelectNumResults
 	DBSelectSearch
-
-	hashifyLCtoMC
 );
+
+our $VERSION = '2.00';
 
 use POSIX qw( strftime );
 use Date::Parse;
@@ -758,27 +758,6 @@ sub DBSelectSearch
 	}
 
 	return ($sth,$numResults);
-}
-
-
-
-# Convert a lower case array to mixed case
-sub hashifyLCtoMC
-{
-	my ($record,@entries) = @_;
-
-
-	# If we undefined, return
-	return if (!defined($record));
-
-	my $res;
-
-	# Loop with each item, assign from lowecase database record to our result
-	foreach my $entry (@entries) {
-		$res->{$entry} = $record->{lc($entry)};
-	}
-
-	return $res;
 }
 
 

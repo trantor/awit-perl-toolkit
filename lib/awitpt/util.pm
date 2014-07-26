@@ -23,7 +23,12 @@ package awitpt::util;
 use strict;
 use warnings;
 
+our $VERSION = "2.000";
+
+
 use File::Spec;
+
+
 
 # Exporter stuff
 require Exporter;
@@ -52,6 +57,7 @@ our (@ISA,@EXPORT,@EXPORT_OK);
 	prettyUndef
 
 	getHashChanges
+	hashifyLCtoMC
 
 	toHex
 	base64_pad
@@ -672,6 +678,28 @@ sub getHashChanges
 	}
 
 	return $changed;
+}
+
+
+
+## @fn hashifyLCtoMC
+# Convert a lower case array to mixed case
+sub hashifyLCtoMC
+{
+	my ($record,@entries) = @_;
+
+
+	# If we undefined, return
+	return if (!defined($record));
+
+	my $res;
+
+	# Loop with each item, assign from lowecase database record to our result
+	foreach my $entry (@entries) {
+		$res->{$entry} = $record->{lc($entry)};
+	}
+
+	return $res;
 }
 
 
