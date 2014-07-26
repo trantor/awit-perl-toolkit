@@ -26,7 +26,6 @@ package awitpt::db::dblayer;
 use strict;
 use warnings;
 
-
 # Exporter stuff
 require Exporter;
 our (@ISA,@EXPORT);
