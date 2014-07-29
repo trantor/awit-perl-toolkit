@@ -683,7 +683,20 @@ sub getHashChanges
 
 
 ## @fn hashifyLCtoMC
-# Convert a lower case array to mixed case
+# There are two usage cases for this function...
+# 1. Converting a hash to mixed case from lower case
+#	$hash = {
+#		'test' => 1,
+#		'bEASt' => 2
+#	};
+#	$nice = hashifyLCtoMC($hash,"Test","Beast");
+#
+#	Only known items will be returned.
+#
+# 2. Converting a string to mixed case
+#	$str = "heLLo";
+#	$res = hashifyLCtoMC($str,"Hello");
+#
 sub hashifyLCtoMC
 {
 	my ($record,@entries) = @_;
@@ -692,14 +705,36 @@ sub hashifyLCtoMC
 	# If we undefined, return
 	return if (!defined($record));
 
-	my $res;
+	# Make an entry table map, we indexed by lower case with the value as the mixed case
+	my %entryTable = map { lc($_) => $_ } @entries;
 
-	# Loop with each item, assign from lowecase database record to our result
-	foreach my $entry (@entries) {
-		$res->{$entry} = $record->{lc($entry)};
+	# If its a hash return the values in a neat hash
+	if (ref($record) eq "HASH") {
+		# Loop with each item, assign from lowecase database record to our result
+		my $res;
+		foreach my $key (keys %{$record}) {
+			# Grab lower case key
+			my $lkey = lc($key);
+			# Try find match
+			if (defined($entryTable{$lkey})) {
+				$res->{$entryTable{$lkey}} = $record->{$key};
+			}
+		}
+		return $res;
+
+	} elsif (ref($record) eq "ARRAY") {
+		# Loop through array
+		my @res;
+		foreach my $key (@{$record}) {
+			my $val = $entryTable{lc($key)};
+			# and add to our result only if defined
+			push(@res,$val) if (defined($val));
+		}
+		return @res;
 	}
 
-	return $res;
+	# We assume we're a normal variable and just return the entry table value
+	return $entryTable{lc($record)};
 }
 
 
