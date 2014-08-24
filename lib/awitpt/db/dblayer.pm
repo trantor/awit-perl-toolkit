@@ -19,9 +19,9 @@
 
 
 
-## @class awitpt::db::dblayer
+## @class AWITPT::DB::DBLayer
 # Database layer module which makes life a bit esier
-package awitpt::db::dblayer;
+package AWITPT::DB::DBLayer;
 
 use strict;
 use warnings;
@@ -53,7 +53,7 @@ our $VERSION = '2.00';
 use POSIX qw( strftime );
 use Date::Parse;
 
-use awitpt::db::dbilayer;
+use AWITPT::DB::DBILayer;
 
 
 # Database handle
@@ -129,7 +129,7 @@ sub DBInit
 	}
 
 	# Check if we created
-	$dbh = awitpt::db::dbilayer->new($dbconfig);
+	$dbh = AWITPT::DB::DBILayer->new($dbconfig);
 
 	return $dbh;
 }

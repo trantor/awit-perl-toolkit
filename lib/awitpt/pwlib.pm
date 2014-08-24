@@ -19,7 +19,7 @@
 # Based off of work from http://www.vboxadm.net/
 #
 
-package awitpt::pwlib;
+package AWITPT::PWLib;
 
 use strict;
 use warnings;
@@ -50,7 +50,7 @@ use MIME::Base64 qw( encode_base64 decode_base64 );
 use Digest::MD5;
 use Digest::Perl::MD5;
 use Digest::SHA;
-use awitpt::util qw( base64_pad );
+use AWITPT::Util qw( base64_pad );
 
 
 

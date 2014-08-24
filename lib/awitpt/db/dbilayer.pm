@@ -20,10 +20,10 @@
 
 
 
-## @class awit::db::dbilayer
+## @class AWITPT::DB::DBILayer
 # Database independant layer module. This module encapsulates the DBI
 # module and provides us with some tweaked functionality
-package awitpt::db::dbilayer;
+package AWITPT::DB::DBILayer;
 
 use strict;
 use warnings;
@@ -114,7 +114,7 @@ sub Init
 	my $dbconfig = $server->{$server_name}->{'database'};
 
 	# Check if we created
-	my $dbh = awitpt::db::dbilayer->new($dbconfig);
+	my $dbh = AWITPT::DB::DBILayer->new($dbconfig);
 	return if (!defined($dbh));
 
 	return $dbh;

@@ -24,7 +24,7 @@
 # * * *
 
 
-package awitpt::netip;
+package AWITPT::NetIP;
 
 use strict;
 use warnings;

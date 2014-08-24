@@ -16,9 +16,9 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-## @class awitpt::util
+## @class AWITPT::Util
 # System functions
-package awitpt::util;
+package AWITPT::Util;
 
 use strict;
 use warnings;
