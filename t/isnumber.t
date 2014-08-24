@@ -20,7 +20,7 @@ use Test::More;
 use strict;
 use warnings;
 
-use awitpt::util;
+use AWITPT::Util;
 
 
 is(isNumber(0),undef);
