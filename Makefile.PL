@@ -21,7 +21,7 @@ use warnings;
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
-	NAME => 'awitpt',
+	NAME => 'AWITPT',
 	VERSION_FROM => "lib/AWITPT/Version.pm",
 
 	EXE_FILES => [qw( bin/convert-tsql )],
