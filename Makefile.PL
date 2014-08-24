@@ -22,7 +22,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
 	NAME => 'awitpt',
-	VERSION_FROM => "lib/awitpt/version.pm",
+	VERSION_FROM => "lib/AWITPT/Version.pm",
 
 	EXE_FILES => [qw( bin/convert-tsql )],
 	MAN3PODS => { },
