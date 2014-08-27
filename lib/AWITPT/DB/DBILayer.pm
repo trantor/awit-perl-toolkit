@@ -38,7 +38,7 @@ my $error = "";
 
 
 ## @internal
-# @fn _setError($err)
+# @fn _error($err)
 # This function is used to set the last error for this class
 #
 # @param err Error message
@@ -103,11 +103,11 @@ sub Init
 
 
 	if (!defined($server)) {
-		_setError("Server object undefined");
+		_error("Server object undefined");
 		return;
 	}
 	if (!defined($server_name)) {
-		_setError("Server name undefined");
+		_error("Server name undefined");
 		return;
 	}
 
@@ -143,7 +143,7 @@ sub new
 
 	# Check if we were given settings
 	if (!defined($settings)) {
-		_setError("No database settings given");
+		_error("No database settings given");
 	}
 
 	# Iternals
@@ -176,7 +176,7 @@ sub new
 		$self->{'sqlite_synchronous'} = $settings->{'SQLiteSynchronous'};
 
 	} else {
-		_setError("No DSN provided");
+		_error("No DSN provided");
 		return;
 	}
 
