@@ -84,11 +84,11 @@ sub _error
 
 
 ## @internal
-# @fn Error
+# @fn error
 # Return current error message
 #
 # @return Last error message
-sub Error
+sub error
 {
 	my $err = $error;
 
@@ -145,7 +145,7 @@ sub DBConnect
 	my $res;
 
 	if ($res = $dbh->connect()) {
-		_error($dbh->Error());
+		_error($dbh->error());
 	}
 
 	return $res;
@@ -186,7 +186,7 @@ sub DBSelect
 	# Prepare query
 	my $sth;
 	if (!($sth = $dbh->select($query,@params))) {
-		_error("Error executing select: ".$dbh->Error());
+		_error("Error executing select: ".$dbh->error());
 		return;
 	}
 
@@ -236,7 +236,7 @@ sub DBDo
 	if (!($sth = $dbh->do($command,@data))) {
 		# Remove newlines...
 		$command =~ s/(\n|\s{2,})/ /g;
-		_error("Error executing command '$command': ".$dbh->Error());
+		_error("Error executing command '$command': ".$dbh->error());
 		return;
 	}
 
@@ -355,7 +355,7 @@ sub DBLastInsertID
 
 	my $res;
 	if (!($res = $dbh->lastInsertID(undef,undef,$table,$column))) {
-		_error("Error getting last inserted id: ".$dbh->Error());
+		_error("Error getting last inserted id: ".$dbh->error());
 		return;
 	}
 
@@ -372,7 +372,7 @@ sub DBBegin
 {
 	my $res;
 	if (!($res = $dbh->begin())) {
-		_error("Error beginning transaction: ".$dbh->Error());
+		_error("Error beginning transaction: ".$dbh->error());
 		return;
 	}
 
@@ -389,7 +389,7 @@ sub DBCommit
 {
 	my $res;
 	if (!($res = $dbh->commit())) {
-		_error("Error committing transaction: ".$dbh->Error());
+		_error("Error committing transaction: ".$dbh->error());
 		return;
 	}
 
@@ -406,7 +406,7 @@ sub DBRollback
 {
 	my $res;
 	if (!($res = $dbh->rollback())) {
-		_error("Error rolling back transaction: ".$dbh->Error());
+		_error("Error rolling back transaction: ".$dbh->error());
 		return;
 	}
 
@@ -474,14 +474,14 @@ sub DBSelectNumResults
 	# Prepare query
 	my $sth;
 	if (!($sth = $dbh->select("SELECT COUNT(*) AS num_results $query"))) {
-		_error("Error executing select: ".$dbh->Error());
+		_error("Error executing select: ".$dbh->error());
 		return;
 	}
 
 	# Grab row
 	my $row = $sth->fetchrow_hashref();
 	if (!defined($row)) {
-		_error("Failed to get results from a select: ".$dbh->Error());
+		_error("Failed to get results from a select: ".$dbh->error());
 		return;
 	}
 

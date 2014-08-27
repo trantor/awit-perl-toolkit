@@ -71,11 +71,11 @@ sub internalError
 
 
 
-## @member Error
+## @member error
 # Return current object error message
 #
 # @return Current object error message
-sub Error
+sub error
 {
 	my $self = shift;
 
