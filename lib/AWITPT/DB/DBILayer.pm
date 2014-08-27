@@ -42,7 +42,7 @@ my $error = "";
 # This function is used to set the last error for this class
 #
 # @param err Error message
-sub _setError
+sub _error
 {
 	my $err = shift;
 	my ($package,$filename,$line) = caller;
