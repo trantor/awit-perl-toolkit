@@ -1197,8 +1197,6 @@ sub _init
 	$self->{'_error'} = "";
 
 
-warn "INITDUMP: ".Dumper($self);
-
 	return $self;
 }
 
