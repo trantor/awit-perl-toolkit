@@ -670,7 +670,9 @@ sub records
 
 	# Make sure we have a result
 	if (!defined($numResults)) {
-		$self->_error("Database query failed: ".AWITPT::DB::DBLayer::error());
+		my $error = AWITPT::DB::DBLayer::error();
+		$self->_error("Database query failed: '$error'");
+		$self->_log(DATAOBJ_LOG_ERROR,"Database query failed: %s",$error);
 		return;
 	}
 
@@ -736,11 +738,19 @@ sub load
 					%s
 			',
 			join(',',$self->_properties(DATAOBJ_PROPERTY_ALL ^ DATAOBJ_PROPERTY_NOLOAD)),
-			$self->_tableName(),
+			$self->table(),
 			join(' AND ',@whereItems)
 		),
 		@whereValues
 	);
+
+	# Check result
+	if (!defined($sth)) {
+		my $error = AWITPT::DB::DBLayer::error();
+		$self->_error("Database query failed: '$error'");
+		$self->_log(DATAOBJ_LOG_ERROR,"Database query failed: %s",$error);
+		return;
+	}
 
 	# Grab row
 	my $row = hashifyLCtoMC($sth->fetchrow_hashref(),$self->_properties(DATAOBJ_PROPERTY_ALL));
@@ -822,7 +832,9 @@ sub commit
 
 		# Update database record
 		if (!defined($res = DBUpdate($self->table(),$id,%data))) {
-			$self->_error("Database update failed: ".AWITPT::DB::DBLayer::error());
+			my $error = AWITPT::DB::DBLayer::error();
+			$self->_error("Database update failed: '$error'");
+			$self->_log(DATAOBJ_LOG_ERROR,"Database update failed: %s",$error);
 			return;
 		}
 
@@ -834,7 +846,9 @@ sub commit
 
 		# Insert database record
 		if (!defined($res = DBInsert($self->table(),%data))) {
-			$self->_error("Database insert failed: ".AWITPT::DB::DBLayer::error());
+			my $error = AWITPT::DB::DBLayer::error();
+			$self->_error("Database insert failed: '$error'");
+			$self->_log(DATAOBJ_LOG_ERROR,"Database insert failed: %s",$error);
 			return;
 		}
 
