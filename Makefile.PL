@@ -25,7 +25,9 @@ WriteMakefile(
 	VERSION_FROM => "lib/AWITPT/Version.pm",
 
 	EXE_FILES => [qw( bin/convert-tsql )],
-	MAN3PODS => { },
+	MAN3PODS => {
+		'lib/AWITPT/DB/DataObj.pm'    => 'blib/man3/AWITPT::DB::DataObj.3'
+	},
 );
 
 # vim: ts=4
