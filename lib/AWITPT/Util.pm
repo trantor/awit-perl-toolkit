@@ -403,7 +403,8 @@ sub isDate
 	}
 
 	# Regex out components
-	my ($year,$month,$day,$hour,$min,$sec) = ($date =~ /^(\d{4})(?:[-\/ \.](\d{1,2})(?:[-\/ \.](\d{1,2})(?:\s(\d{2})\:(\d{2})(?:\:(\d{2}))?)?)?)?$/);
+	my ($year,$month,$day,$hour,$min,$sec) = (
+			$date =~ /^(\d{4})(?:[-\/ \.](\d{1,2})(?:[-\/ \.](\d{1,2})(?:\s(\d{2})\:(\d{2})(?:\:(\d{2}))?)?)?)?$/);
 
 	my @result;
 
