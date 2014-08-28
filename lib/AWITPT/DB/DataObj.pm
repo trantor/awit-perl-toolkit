@@ -93,6 +93,7 @@ use AWITPT::Util 2.00 qw(
 		isDomain
 );
 use AWITPT::DB::DBLayer;
+use Carp qw(longmess);
 use Data::Dumper;
 
 
@@ -1209,18 +1210,29 @@ sub _log
 	my ($self,$level,$format,@params) = @_;
 
 
+	my $msg;
+
 	# Check if we want this debug level
 	if ($DEBUG >= $level) {
-		my @caller = caller(1);
-
-		# If we do format our message and send it along
-		my $msg = sprintf("%s: ",$caller[3]) . sprintf($format,@params);
-		if ($level == DATAOBJ_LOG_ERROR) {
-			die($msg);
+		# Serious messages have full debugging
+		if ($DEBUG > 4 || $level == DATAOBJ_LOG_ERROR) {
+			$msg = longmess(sprintf($format,@params));
+		# Not so serious just has our caller
 		} else {
-			$self->log($level,$msg);
+			my @caller = caller(1);
+			$msg = sprintf("%s: ",$caller[3]) . sprintf($format,@params);
 		}
+
 	}
+
+	# Check if we aborting
+	if ($level == DATAOBJ_LOG_ERROR) {
+		die($msg);
+	} elsif (defined($msg)) {
+		$self->log($level,$msg);
+	}
+
+	return;
 }
 
 
