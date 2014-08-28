@@ -664,7 +664,7 @@ sub records
 					%s
 			",
 			join(',',$self->_properties(DATAOBJ_PROPERTY_ALL ^ DATAOBJ_PROPERTY_NOLOAD)),
-			$self->_tableName()
+			$self->table()
 		)
 	);
 
@@ -913,7 +913,7 @@ sub remove
 				WHERE
 					%s
 			',
-			$self->_tableName(),
+			$self->table(),
 			join(' AND ',@whereItems)
 		),
 		@whereValues
