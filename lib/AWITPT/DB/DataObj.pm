@@ -515,6 +515,9 @@ sub validate
 
 		return $value;
 
+	# Fallthrough
+	} else {
+		$self->_log(DATAOBJ_LOG_ERROR,"Property '$propertyName' has invalid validation type");
 	}
 
 	return;
