@@ -1296,6 +1296,9 @@ sub _set
 
 
 	my $property = $self->_propertyByName($propertyName);
+	if (!defined($property)) {
+		$self->_log(DATAOBJ_LOG_ERROR,"Cannot set property '%s'",$propertyName);
+	}
 
 	# Check if we have data from the DB
 	if (defined($self->{'_data.loaded'})) {
