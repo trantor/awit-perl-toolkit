@@ -1302,13 +1302,21 @@ sub _set
 
 	# Check if we have data from the DB
 	if (defined($self->{'_data.loaded'})) {
-		# Check it doesn't match
-		if ($self->{'_data.loaded'}->{$property->{'name'}} ne $value) {
+
+		# If we did not load, then this has changed
+		if (!defined($self->{'_data.loaded'}->{$property->{'name'}})) {
 			$self->{'_data.changed'}->{$property->{'name'}} = $value;
-		# Delete if it exists and its the same
+
 		} else {
-			delete($self->{'_data.changed'}->{$property->{'name'}});
+			# If loaded does not match the new value, then set changed
+			if ($self->{'_data.loaded'}->{$property->{'name'}} ne $value) {
+				$self->{'_data.changed'}->{$property->{'name'}} = $value;
+			# Delete if it exists and its the same
+			} else {
+				delete($self->{'_data.changed'}->{$property->{'name'}});
+			}
 		}
+
 	# If DB data is not defined, it means this is new, so its changed
 	} else {
 		$self->{'_data.changed'}->{$property->{'name'}} = $value;
