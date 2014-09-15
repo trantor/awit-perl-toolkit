@@ -19,21 +19,15 @@
 ## @class AWITPT::Util
 # System functions
 package AWITPT::Util;
+use parent 'Exporter';
 
 use strict;
 use warnings;
 
 our $VERSION = "2.000";
 
-
-use File::Spec;
-
-
-
 # Exporter stuff
-require Exporter;
-our (@ISA,@EXPORT,@EXPORT_OK);
-@ISA = qw(Exporter);
+our (@EXPORT,@EXPORT_OK);
 @EXPORT = qw(
 	indentExpand
 
@@ -80,7 +74,6 @@ our (@ISA,@EXPORT,@EXPORT_OK);
 @EXPORT_OK = qw(
 );
 
-
 # Define constants
 use constant {
 	ISNUMBER_ALLOW_ZERO => 1,
@@ -95,6 +88,7 @@ use constant {
 	ISDATE_UNIX => 16
 };
 
+use File::Spec;
 
 
 ## @fn indentExpand($char,$count)
