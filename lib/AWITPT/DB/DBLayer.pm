@@ -27,6 +27,8 @@ use parent 'Exporter';
 use strict;
 use warnings;
 
+our $VERSION = '2.000';
+
 # Exporter stuff
 our (@EXPORT);
 @EXPORT = qw(
@@ -46,8 +48,6 @@ our (@EXPORT);
 	DBSelectNumResults
 	DBSelectSearch
 );
-
-our $VERSION = '2.00';
 
 use POSIX qw( strftime );
 use Date::Parse;
