@@ -29,6 +29,8 @@ package AWITPT::NetIP;
 use strict;
 use warnings;
 
+our $VERSION = "1.000";
+
 use Socket;
 BEGIN {
 	if (defined &Socket::inet_pton) {
