@@ -26,4 +26,3 @@ is(system("perlcritic --statistics --gentle ."),0);
 
 done_testing();
 
-# vim: ts=4

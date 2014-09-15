@@ -451,4 +451,3 @@ sub _make_salt {
 
 
 1;
-# vim: ts=4

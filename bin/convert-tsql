@@ -110,4 +110,3 @@ case "$database" in
 
 esac
 
-# vim: ts=4

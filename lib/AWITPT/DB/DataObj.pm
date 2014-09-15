@@ -1371,7 +1371,6 @@ sub _loadHash
 
 
 1;
-# vim: ts=4
 __END__
 
 =head1 DEBUGGING

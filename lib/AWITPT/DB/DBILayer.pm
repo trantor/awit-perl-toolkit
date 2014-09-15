@@ -537,4 +537,3 @@ sub table_prefix
 
 
 1;
-# vim: ts=4

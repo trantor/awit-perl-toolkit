@@ -30,4 +30,3 @@ WriteMakefile(
 	},
 );
 
-# vim: ts=4

@@ -562,4 +562,3 @@ sub _calc_ranges
 
 
 1;
-# vim: ts=4

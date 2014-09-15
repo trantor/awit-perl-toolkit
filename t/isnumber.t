@@ -45,4 +45,3 @@ is(isNumber("-0a"),undef);
 
 done_testing();
 
-# vim: ts=4

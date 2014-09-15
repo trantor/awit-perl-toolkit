@@ -23,4 +23,3 @@ use warnings;
 our $VERSION = "0.1.x";
 
 1;
-# vim: ts=4

@@ -1006,4 +1006,3 @@ sub send_file
 
 
 1;
-# vim: ts=4
