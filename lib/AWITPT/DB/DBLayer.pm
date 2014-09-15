@@ -22,14 +22,13 @@
 ## @class AWITPT::DB::DBLayer
 # Database layer module which makes life a bit esier
 package AWITPT::DB::DBLayer;
+use parent 'Exporter';
 
 use strict;
 use warnings;
 
 # Exporter stuff
-require Exporter;
-our (@ISA,@EXPORT);
-@ISA = qw(Exporter);
+our (@EXPORT);
 @EXPORT = qw(
 	DBInit
 	DBConnect
