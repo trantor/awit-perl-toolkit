@@ -20,14 +20,14 @@
 #
 
 package AWITPT::PWLib;
+use parent 'Exporter';
 
 use strict;
 use warnings;
 
+our $VERSION = "1.000";
 
-require Exporter;
-our (@ISA,@EXPORT,@EXPORT_OK);
-@ISA = qw(Exporter);
+our (@EXPORT,@EXPORT_OK);
 @EXPORT = qw(
 	pwlib_crypt
 	pwlib_verify
