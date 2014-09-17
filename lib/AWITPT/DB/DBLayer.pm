@@ -143,6 +143,12 @@ sub DBConnect
 {
 	my $res;
 
+
+	if (!defined($dbh)) {
+		_error("Database not initialized");
+		return;
+	}
+
 	if ($res = $dbh->connect()) {
 		_error($dbh->error());
 	}
@@ -177,6 +183,11 @@ sub DBSelect
 	my ($query,@params) = @_;
 
 
+	if (!defined($dbh)) {
+		_error("Database not initialized");
+		return;
+	}
+
 	my $table_prefix = $dbh->table_prefix();
 
 	# Replace table prefix macro
@@ -204,6 +215,11 @@ sub DBDo
 {
 	my (@params) = @_;
 
+
+	if (!defined($dbh)) {
+		_error("Database not initialized");
+		return;
+	}
 
 	my $table_prefix = $dbh->table_prefix();
 
@@ -257,6 +273,11 @@ sub DBUpdate
 	my ($table,$id,%data) = @_;
 
 
+	if (!defined($dbh)) {
+		_error("Database not initialized");
+		return;
+	}
+
 	# Loop with columns and add them to our list of updates to do
 	my @columns;
 	my @values;
@@ -305,6 +326,11 @@ sub DBInsert
 	my ($table,%data) = @_;
 
 
+	if (!defined($dbh)) {
+		_error("Database not initialized");
+		return;
+	}
+
 	# Loop with columns and add them to our list
 	my @columns;
 	my @placeholders;
@@ -352,6 +378,11 @@ sub DBLastInsertID
 	my ($table,$column) = @_;
 
 
+	if (!defined($dbh)) {
+		_error("Database not initialized");
+		return;
+	}
+
 	my $res;
 	if (!($res = $dbh->lastInsertID(undef,undef,$table,$column))) {
 		_error("Error getting last inserted id: ".$dbh->error());
@@ -370,6 +401,13 @@ sub DBLastInsertID
 sub DBBegin
 {
 	my $res;
+
+
+	if (!defined($dbh)) {
+		_error("Database not initialized");
+		return;
+	}
+
 	if (!($res = $dbh->begin())) {
 		_error("Error beginning transaction: ".$dbh->error());
 		return;
@@ -387,6 +425,13 @@ sub DBBegin
 sub DBCommit
 {
 	my $res;
+
+
+	if (!defined($dbh)) {
+		_error("Database not initialized");
+		return;
+	}
+
 	if (!($res = $dbh->commit())) {
 		_error("Error committing transaction: ".$dbh->error());
 		return;
@@ -404,6 +449,13 @@ sub DBCommit
 sub DBRollback
 {
 	my $res;
+
+
+	if (!defined($dbh)) {
+		_error("Database not initialized");
+		return;
+	}
+
 	if (!($res = $dbh->rollback())) {
 		_error("Error rolling back transaction: ".$dbh->error());
 		return;
@@ -425,6 +477,11 @@ sub DBQuote
 	my $variable = shift;
 
 
+	if (!defined($dbh)) {
+		_error("Database not initialized");
+		return;
+	}
+
 	return $dbh->quote($variable);
 }
 
@@ -439,6 +496,11 @@ sub DBFreeRes
 	my $sth = shift;
 
 
+	if (!defined($dbh)) {
+		_error("Database not initialized");
+		return;
+	}
+
 	if ($sth) {
 		$sth->finish();
 	}
@@ -449,6 +511,11 @@ sub DBFreeRes
 # Function to get table prefix
 sub DBTablePrefix
 {
+	if (!defined($dbh)) {
+		_error("Database not initialized");
+		return;
+	}
+
 	return $dbh->table_prefix();
 }
 
@@ -469,6 +536,11 @@ sub DBSelectNumResults
 {
 	my $query = shift;
 
+
+	if (!defined($dbh)) {
+		_error("Database not initialized");
+		return;
+	}
 
 	# Prepare query
 	my $sth;
@@ -526,6 +598,11 @@ sub DBSelectSearch
 {
 	my ($query,$search,$filters,$sorts) = @_;
 
+
+	if (!defined($dbh)) {
+		_error("Database not initialized");
+		return;
+	}
 
 	# Stuff we need to add to the SQL query
 	my @where; # Where clauses
