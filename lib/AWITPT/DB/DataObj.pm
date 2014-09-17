@@ -176,7 +176,7 @@ sub records
 	if (!defined($numResults)) {
 		my $error = AWITPT::DB::DBLayer::error();
 		$self->_error("Database query failed: '$error'");
-		$self->_log(DATAOBJ_LOG_ERROR,"Database query failed: %s",$error);
+		$self->_log(DATAOBJ_LOG_WARNING,"Database query failed: %s",$error);
 		return;
 	}
 
@@ -199,7 +199,7 @@ sub records
 
 	$dataObj->load('Name' => 'Joe Soap');
 
-The C<load> method is used to load a single record from the database. It has 2 forms of invocation, either by specifying One
+The C<load> method is used to load a single record from the database. It has 2 forms of invocation, either by specifying one
 parameter which is assumed to be the value of the ID field, or by specifying a hash of key-value pairs.
 
 Only the first matching record is returned, if multiple records exist the result can be any one of them being returned.
@@ -252,7 +252,7 @@ sub load
 	if (!defined($sth)) {
 		my $error = AWITPT::DB::DBLayer::error();
 		$self->_error("Database query failed: '$error'");
-		$self->_log(DATAOBJ_LOG_ERROR,"Database query failed: %s",$error);
+		$self->_log(DATAOBJ_LOG_WARNING,"Database query failed: %s",$error);
 		return;
 	}
 
@@ -296,11 +296,10 @@ sub commit
 			$data{$propertyName} = $changed->{$propertyName};
 		}
 	}
-
+	# If we have no values which changed, return 0E0
 	if (!%data) {
 		return "0E0";
 	}
-
 
 	# We have an ID so its an update
 	my $res;
@@ -310,11 +309,11 @@ sub commit
 		if (!defined($res = DBUpdate($self->table(),$id,%data))) {
 			my $error = AWITPT::DB::DBLayer::error();
 			$self->_error("Database update failed: '$error'");
-			$self->_log(DATAOBJ_LOG_ERROR,"Database update failed: %s",$error);
+			$self->_log(DATAOBJ_LOG_WARNING,"Database update failed: %s",$error);
 			return;
 		}
 
-		$self->_log(DATAOBJ_LOG_DEBUG,"Updating table '%s' row ID '%s' with: %s",$self->table(),$id,Dumper(\%data));
+		$self->_log(DATAOBJ_LOG_DEBUG2,"Updating table '%s' row ID '%s' with: %s",$self->table(),$id,Dumper(\%data));
 
 
 	# No ID means its an insert
@@ -324,11 +323,11 @@ sub commit
 		if (!defined($res = DBInsert($self->table(),%data))) {
 			my $error = AWITPT::DB::DBLayer::error();
 			$self->_error("Database insert failed: '$error'");
-			$self->_log(DATAOBJ_LOG_ERROR,"Database insert failed: %s",$error);
+			$self->_log(DATAOBJ_LOG_WARNING,"Database insert failed: %s",$error);
 			return;
 		}
 
-		$self->_log(DATAOBJ_LOG_DEBUG,"Inserting into table '%s' row ID '%s' with: %s",$self->table(),$res,Dumper(\%data));
+		$self->_log(DATAOBJ_LOG_DEBUG2,"Inserting into table '%s' row ID '%s' with: %s",$self->table(),$res,Dumper(\%data));
 		$self->_set('ID',$res);
 
 	}
@@ -344,8 +343,8 @@ sub commit
 
 	$dataObj->remove('Name' => "Sam", 'Surname' => "Soap");
 
-The C<remove> method is used to remove the data object from the database. The function can take an optional set of parameters
-which will be used in the SQL DELETE WHERE statement instead of using the current object ID.
+The C<remove> method is used to remove the data object from the database. The function can take an optional set of parameters which
+will be used in the SQL DELETE WHERE statement instead of using the current object ID.
 
 If no paremeters are given the current object ID is removed and the ID property removed from the data object. If a set of optional
 parameters is given, the ID property is NOT removed.
@@ -393,7 +392,7 @@ sub remove
 		push(@whereValues,$matches{$column});
 	}
 
-	$self->_log(DATAOBJ_LOG_DEBUG,"Removing record from table '%s' with: %s",$self->table(),Dumper(\%matches));
+	$self->_log(DATAOBJ_LOG_DEBUG2,"Removing record from table '%s' with: %s",$self->table(),Dumper(\%matches));
 
 	# Do SQL delete
 	my $rows = DBDo(
