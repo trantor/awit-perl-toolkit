@@ -109,55 +109,20 @@ C<AWITPT::DB::DataObj> provides the below manipulation methods.
 		retrun {
 			'table' => "mytable"
 			'properties' => {
-				'testproperty' => { ...<property data>... }
+				'Description' => {
+					<OPTIONS>,
+					<VALIDATION>,
+					<RELATIONS>
+				}
 			}
 		}
 	}
 
-The C<config> method is used to return configuration information for the current object, it must be overridden for each object
-created and must return a hashref with the object configuration.
+See L<AWITPT::DataObj> for options, validation and relations.
 
-Each property defined supports <property data> with a number of options described below...
-
-	'testproperty => { 'options' => OPTION1 | OPTION2 }
-
-	OPTION                          DESCRIPTION
-	------                          -----------
-	DATAOBJ_PROPERTY_READONLY       Internal use, this property cannot be set
-	DATAOBJ_PROPERTY_NOLOAD         This property is not loaded from the database
-	DATAOBJ_PROPERTY_NOSAVE         This property is not saved to the database
-
-
-Each property also supports optional validation criteria described below...
-
-	'validate' => { 'type' => VALIDATE_TYPE, ... }
-
-	TYPE        DESCRIPTION                  OPTION    INFO
-	----        -----------                  ------    ----
-	text        Validates text characters    length    Optional minimum length
-	                                         regex     Optional regex,
-	                                                   eg. qr ( /^ABc/ )
-	username    Validate username            params    See L<AWITPT::Util> for
-	                                                   options for C<isUsername>
-	email       Validate email address
-	boolean     Validate boolean
-	domain      Validate domain
-	number      Validate number              params    See L<AWITPT::Util> for
-	                                                   options for C<isNumber>
-
-	regex       Validate against a regex     regex     Mandatory regex,
-	                                                   eg. qr ( /^ABc/ )
+=back
 
 =cut
-
-# Blank config method, this needs to be overridden for each data object
-sub config
-{
-	my $self = shift;
-
-
-	return { };
-}
 
 
 
