@@ -1,4 +1,4 @@
-# AWIT Data Object
+# AWIT Database Data Object
 # Copyright (C) 2014, AllWorldIT
 #
 # This program is free software: you can redistribute it and/or modify
