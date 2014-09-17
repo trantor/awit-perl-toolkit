@@ -27,7 +27,7 @@ AWITPT::DB::DataObj - AWITPT Database Data Object
 	#
 	package AWITPT::DB::DataObj::myobject;
 	use AWITPT::DB::DataObj 1.00;
-	use base 'AWITPT::DB::DataObj';
+	use parent 'AWITPT::DB::DataObj';
 
 	use strict;
 	use warnings;
@@ -62,16 +62,18 @@ access to table data.
 
 
 package AWITPT::DB::DataObj;
+use parent 'Exporter';
+
+use AWITPT::DataObj 3.000;
+use base 'AWITPT::DataObj';
 
 use strict;
 use warnings;
-use vars qw{$AUTOLOAD};
 
-our $VERSION = "2.00";
+our $VERSION = "2.000";
 
-require Exporter;
 our (@ISA,@EXPORT,@EXPORT_OK);
-@ISA = qw(Exporter);
+# Re-export our parents constants
 @EXPORT = qw(
 	DATAOBJ_PROPERTY_ALL
 	DATAOBJ_PROPERTY_READONLY
