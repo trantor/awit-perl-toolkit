@@ -26,6 +26,7 @@ WriteMakefile(
 
 	EXE_FILES => [qw( bin/convert-tsql )],
 	MAN3PODS => {
+		'lib/AWITPT/DataObj.pm'    => 'blib/man3/AWITPT::DataObj.3',
 		'lib/AWITPT/DB/DataObj.pm'    => 'blib/man3/AWITPT::DB::DataObj.3'
 	},
 );
