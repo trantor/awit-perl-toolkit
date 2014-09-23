@@ -75,11 +75,14 @@ our $VERSION = "2.000";
 our (@ISA,@EXPORT,@EXPORT_OK);
 # Re-export our parents constants
 @EXPORT = qw(
-	DATAOBJ_PROPERTY_ALL
+	DATAOBJ_LOADONIDSET
+
 	DATAOBJ_PROPERTY_READONLY
 	DATAOBJ_PROPERTY_NOLOAD
 	DATAOBJ_PROPERTY_ID
 	DATAOBJ_PROPERTY_NOSAVE
+
+	DATAOBJ_RELATION_READONLY
 );
 @EXPORT_OK = qw(
 );
@@ -458,11 +461,11 @@ sub clone
 # Reset internals of the object
 sub _init
 {
-	my $self = shift;
+	my ($self,@params) = @_;
 
 
 	# Initialize parent, VERY important
-	$self->SUPER::_init();
+	$self->SUPER::_init(@params);
 
 	# Grab our configuration so we can initialize our customizations
 	my $config = $self->config();
