@@ -348,7 +348,7 @@ Below is a list of supported options:
 =item *
 B<DATAOBJ_RELATION_READONLY>
 
-The child object will not be created if it does not exist.
+The child object will not be created if it does not exist. This only relates to the 'Direct' relation.
 
 =back
 
