@@ -430,6 +430,38 @@ The C<validate[A-Z][A-Za-z0-9]+> method validates the value for the named proper
 		my $propertyName = $1;
 
 		return $self->validate($propertyName,@params);
+
+
+=head2 relation[A-Z][A-Za-z0-9]+
+
+	$dataObj->relationDomainNames();
+
+The C<relation[A-Z][A-Za-z0-9]+> method returns the relation management object for the relation property.
+
+=cut
+
+	# relation*()
+	} elsif ($function =~ /^relation([A-Z][A-Za-z0-9]+)/) {
+		my $relationName = $1;
+
+		return $self->relation($relationName,@params);
+
+
+=head2 [A-Z][A-Za-z0-9]+
+
+	$dataObj->DomainNames();
+
+The C<[A-Z][A-Za-z0-9]+> method is shorthand to refer to a relation.
+
+=cut
+
+	# *()
+	} elsif ($function =~ /^([A-Z][A-Za-z0-9]+)/) {
+		my $relationName = $1;
+
+		return $self->relation($relationName,@params);
+
+
 	}
 
 	die "No such method: $AUTOLOAD";
@@ -701,6 +733,31 @@ sub validate
 	}
 
 	return;
+}
+
+
+
+=head2 relation
+
+	$dataObj->relation("DomainNames");
+
+The C<relation> method returns the relation management object for the relation property.
+
+=cut
+
+# Return relation object
+sub relation
+{
+	my ($self,$relationName) = @_;
+
+
+	# Grab relation object
+	my $relation = $self->_relation($relationName);
+	if (!defined($relation)) {
+		$self->_log(DATAOBJ_LOG_ERROR,"Relation '%s' not found",$relationName);
+	}
+
+	return $self->_relation($relationName);
 }
 
 
