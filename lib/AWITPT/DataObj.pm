@@ -348,7 +348,7 @@ Below is a list of supported options:
 =item *
 B<DATAOBJ_RELATION_READONLY>
 
-The child object will not be created if it does not exist. This only relates to the 'Direct' relation.
+The child object will not be created if it does not exist. This only pertains to the 'Direct' relation.
 
 =back
 
@@ -1555,6 +1555,6 @@ the Free Software Foundation, either version 3 of the License, or
 
 =head1 SEE ALSO
 
-L<AWITPT::DB::DBLayer>.
+L<AWITPT::DB::DBLayer>, L<AWITPT::DataObj::Relation>, L<AWITPT::DataObj::Relation::Direct>, L<AWITPT::DataObj::Relation::List>.
 
 =cut
