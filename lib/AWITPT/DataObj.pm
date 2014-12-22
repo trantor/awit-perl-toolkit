@@ -1306,7 +1306,7 @@ sub _init
 				my $relationHandler;
 				eval "
 					use AWITPT::DataObj::Relation::$type;
-					\$relationHandler = AWITPT::DataObj::Relation::$type->new('$class');
+					\$relationHandler = AWITPT::DataObj::Relation::${type}->new('$class');
 				";
 				die $@ if $@;
 
@@ -1542,11 +1542,11 @@ sub _relationNamesFromProperty
 
 	# Return list, array or arrayref, or undef
 	my $relations = $self->{'_relations_map'}->{$propertyName};
-	if (defined($relations)) {
-		return wantarray ? keys %{$relations} : [ keys %{$relations} ];
-	} else {
+	if (!defined($relations)) {
 		return;
 	}
+
+	return wantarray ? keys %{$relations} : [ keys %{$relations} ];
 }
 
 
