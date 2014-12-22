@@ -79,6 +79,7 @@ sub new
 
 	# These are our internal properties
 	my $self = {
+		'_child' => undef,
 		'_child_class_name' => $childClass
 	};
 
@@ -109,6 +110,35 @@ sub AUTOLOAD
 #
 # INTERNALS
 #
+
+
+
+# Grab the relation child
+sub _relationChild
+{
+	my $self = shift;
+
+
+	# If we don't have a child we need to create it
+	if (!defined($self->{'_child'})) {
+		# Grab child class name
+		my $childClassName = $self->_relationChildClass();
+		# Instantiate child class
+		my $child;
+		eval "
+			use $childClassName;
+			\$child = ${childClassName}->new(DATAOBJ_LOADONIDSET);
+		";
+		die $@ if $@;
+		# Assign instantiated child class
+		$self->{'_child'} = $child;
+		# Use child logging method...
+		$child->_log(DATAOBJ_LOG_DEBUG,"Spawned '$childClassName' to satisfy relation requirement");
+	}
+
+	# Return the child we have or have created
+	return $self->{'_child'};
+}
 
 
 

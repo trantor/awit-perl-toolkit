@@ -439,15 +439,10 @@ The C<clone> method returns a clone of the current object.
 # Clone ourselves
 sub clone
 {
-	my $self = shift;
+	my ($self,@data) = @_;
 
 
-	# Setup our internals
-	my $properties = {
-		'_table' => $self->{'_table'},
-	};
-
-	return $self->SUPER::clone($properties);
+	return $self->SUPER::clone(@data);
 }
 
 
@@ -477,6 +472,7 @@ sub _init
 	}
 	# Set the table name
 	$self->{'_table'} = $config->{'table'};
+	$self->_addInternalProperty('_table');
 
 	return $self;
 }

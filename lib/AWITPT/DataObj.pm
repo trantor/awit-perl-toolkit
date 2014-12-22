@@ -174,7 +174,7 @@ This property will cause the object to load when a DATAOBJ_PROPERTY_ID is set.
 # Class instantiation
 sub new
 {
-	my ($class,$options) = @_;
+	my ($class,@params) = @_;
 
 	# These are our internal properties
 	my $self = {
@@ -184,7 +184,7 @@ sub new
 	bless($self, $class);
 
 	# And initialize
-	$self->_init($options);
+	$self->_init(@params);
 
 	return $self;
 }
@@ -932,31 +932,43 @@ sub load
 
 =head2 loadHash
 
-	$dataObj->loadHash($dataHash);
+	$dataObj->loadHash($hashref);
 
-The C<loadHash> method loads properties from a hashref. If the data was previously changed the changed flag is reset and the
-loaded flag is applied to the property.
+	$dataObj->loadHash('a' => 1, 'b' => 2);
+
+The C<loadHash> method loads properties from a hash or hashref. If the data was previously changed the changed flag is reset and
+the loaded flag is applied to the property.
 
 =cut
 
-# Load record data from hash
+# Load record data
 # NOTE: The _loadHash function uses _set()
 sub loadHash
 {
-	my ($self,$data) = @_;
+	my ($self,@data) = @_;
 
 
 	# Blank data if there is no data
-	if (!defined($data)) {
-		$data = { };
+	if (!@data) {
+		$self->_log(DATAOBJ_LOG_DEBUG,"No properties to load");
+		return $self;
+	}
+
+	# If we have an odd number of elements, treat it as a hashref
+	my %properties;
+	if (@data % 2) {
+		my $hashref = shift(@data);
+		%properties = %{$hashref};
+	} else {
+		%properties = @data;
 	}
 
 	# Set properties
-	foreach my $item (keys %{$data}) {
-		$self->set($item,$data->{$item});
+	foreach my $item (keys %properties) {
+		$self->set($item,$properties{$item});
 	}
 
-	$self->_log(DATAOBJ_LOG_DEBUG,"Loaded %s properties from hash", scalar keys %{$data});
+	$self->_log(DATAOBJ_LOG_DEBUG,"Loaded %s properties from hash", scalar keys %properties);
 
 	return $self;
 }
@@ -1072,8 +1084,10 @@ The C<clone> method returns a clone of the current object.
 # Clone ourselves
 sub clone
 {
-	my ($self,$properties) = @_;
+	my ($self,@data) = @_;
 
+
+	$self->_log(DATAOBJ_LOG_DEBUG,"Cloning %s",ref($self));
 
 	# Setup our internals
 	my $clone = {
@@ -1084,17 +1098,19 @@ sub clone
 		'_error' => ""
 	};
 
-	# Load optionals if we have any
-	if (defined($properties)) {
-		foreach my $opt (keys %{$properties}) {
-			$clone->{$opt} = $properties->{$opt};
-		}
+	# Add our internals
+	foreach my $property (keys %{$self->{'_internal_properties'}}) {
+		$self->_log(DATAOBJ_LOG_DEBUG,"  - Setting internal property '%s'",$property);
+		$clone->{$property} = $self->{$property};
 	}
 
 	# Build our clone based on the ref of the parent class
 	bless($clone, ref($self));
 
 	$self->_log(DATAOBJ_LOG_DEBUG,"Object cloned");
+
+	# Load hash
+	$self->loadHash(@data);
 
 	return $clone;
 }
@@ -1158,7 +1174,7 @@ sub error
 # Initialize internals of the object
 sub _init
 {
-	my ($self,$options) = @_;
+	my ($self,@params) = @_;
 
 
 	# Grab our configuration
@@ -1166,9 +1182,18 @@ sub _init
 
 	$self->_log(DATAOBJ_LOG_DEBUG,"Initializing object '%s'",ref($self));
 
-	# Set options
-	# // is like ||, but // is for undefined
-	$self->{'_options'} = $options // 0;
+	# Set everything blank before we begin
+	$self->{'_options'} = 0;
+	$self->{'_relations'} = { };
+	$self->{'_relations_map'} = { };
+	$self->{'_properties'} = {};
+
+	# If we have an odd number of params, chop off the first one as our options
+	if (@params % 2) {
+		# Set options
+		$self->{'_options'} = shift(@params);
+	}
+
 	# Loop through the properties, check them and clean them up
 	foreach my $propertyName (keys %{$config->{'properties'}}) {
 		my $propertyConfig = $config->{'properties'}->{$propertyName};
@@ -1186,10 +1211,6 @@ sub _init
 
 		# Set property
 		my $property = $self->{'_properties'}->{$propertyName};
-
-		# Start with blank relations
-		$self->{'_relations'} = { };
-		$self->{'_relations_map'} = { };
 
 		# Check if we have validation criteria
 		if (defined($propertyConfig->{'validate'})) {
@@ -1330,12 +1351,29 @@ sub _init
 	# Values which were changed
 	$self->{'_data.changed'} = {};
 
-
 	# Reset error too
 	$self->{'_error'} = "";
 
+	# Reset our internal list of properties, used for cloning
+	$self->{'_internal_properties'} = {};
+
+	# If we still have params, load them
+	if (@params) {
+		$self->loadHash(@params);
+	}
 
 	return $self;
+}
+
+
+
+# Add an internal property
+sub _addInternalProperty
+{
+	my ($self,$property) = @_;
+
+
+	$self->{'_internal_properties'}->{$property} = 1;
 }
 
 
@@ -1501,25 +1539,35 @@ sub _get
 
 
 
-# Load record data from hash, using _set and setup special data.loaded items
+# Load record data from a hash or hashref, using _set and setup special data.loaded items
 sub _loadHash
 {
-	my ($self,$data) = @_;
+	my ($self,@data) = @_;
 
 
 	# Blank data if there is no data
-	if (!defined($data)) {
-		$data = { };
+	if (!@data) {
+		$self->_log(DATAOBJ_LOG_DEBUG,"No properties to load");
+		return $self;
+	}
+
+	# If we have an odd number of elements, treat it as a hashref
+	my %properties;
+	if (@data % 2) {
+		my $hashref = shift(@data);
+		%properties = %{$hashref};
+	} else {
+		%properties = @data;
 	}
 
 	# Set properties
-	foreach my $item (keys %{$data}) {
+	foreach my $item (keys %properties) {
 		# Set this item as being loaded, if we do this before the _set, we don't generate a data.changed entry
-		$self->{'data.loaded'}->{$item} = $data->{$item};
-		$self->_set($item,$data->{$item});
+		$self->{'data.loaded'}->{$item} = $properties{$item};
+		$self->_set($item,$properties{$item});
 	}
 
-	$self->_log(DATAOBJ_LOG_DEBUG,"Loaded %s internal properties from hash", scalar keys %{$data});
+	$self->_log(DATAOBJ_LOG_DEBUG,"Loaded %s internal properties from hash", scalar keys %properties);
 
 	return $self;
 }
