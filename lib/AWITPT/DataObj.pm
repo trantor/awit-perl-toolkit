@@ -1310,7 +1310,7 @@ sub _init
 				";
 				die $@ if $@;
 
-				# Checki f we actually got something back
+				# Check if we actually got something back
 				if (!defined($relationHandler)) {
 					$self->_log(DATAOBJ_LOG_ERROR,"ERROR: Cannot create relation '%s' => '%s' [%s]",$relationName,$class,$type);
 				}
