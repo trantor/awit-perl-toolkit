@@ -22,7 +22,14 @@ AWITPT::DataObj::Relation::Direct - AWITPT Database Data Object Direct Relation
 
 =head1 SYNOPSIS
 
-	# FIXME
+	# Direct relations link directly to the properties, we first create a object
+	my $obj = DataObj::Task->new();
+
+	# Then we can then validate the property
+	my $creatorID = $obj->validateCreatorID(99);
+
+	# And set its value...
+	$obj->setCreatorID($creatorID);
 
 =head1 DESCRIPTION
 
@@ -41,12 +48,31 @@ use warnings;
 our $VERSION = "1.000";
 
 
+use AWITPT::DataObj;
+
 
 =head1 METHODS
 
 C<AWITPT::DataObj::Relation::Direct> provides the below methods.
 
 =cut
+
+
+
+# Class instantiation
+sub new
+{
+	my ($class,@params) = @_;
+
+
+	# Instantiate parent
+	my $self = $class->SUPER::new(@params);
+
+	# Setup our own properties
+	$self->{'_child'} = undef;
+
+	return $self;
+}
 
 
 
@@ -66,6 +92,41 @@ sub AUTOLOAD
 
 	# Redirect all other namespace calls to the child
 	return $self->_relationChild()->$function(@params);
+}
+
+
+
+#
+# INTERNALS
+#
+
+
+
+# Grab the relation child
+sub _relationChild
+{
+	my $self = shift;
+
+
+	# If we don't have a child we need to create it
+	if (!defined($self->{'_child'})) {
+		# Grab child class name
+		my $childClassName = $self->_relationChildClass();
+		# Instantiate child class
+		my $child;
+		eval "
+			use $childClassName;
+			\$child = ${childClassName}->new(DATAOBJ_LOADONIDSET);
+		";
+		die $@ if $@;
+		# Assign instantiated child class
+		$self->{'_child'} = $child;
+		# Use child logging method...
+		$child->_log(DATAOBJ_LOG_DEBUG,"Spawned '$childClassName' to satisfy relation requirement");
+	}
+
+	# Return the child we have or have created
+	return $self->{'_child'};
 }
 
 

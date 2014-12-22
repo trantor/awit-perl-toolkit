@@ -79,7 +79,6 @@ sub new
 
 	# These are our internal properties
 	my $self = {
-		'_child' => undef,
 		'_child_class_name' => $childClass
 	};
 
@@ -114,30 +113,12 @@ sub AUTOLOAD
 
 
 # Grab the relation child
-sub _relationChild
+sub _relationChildClass
 {
 	my $self = shift;
 
 
-	# If we don't have a child we need to create it
-	if (!defined($self->{'_child'})) {
-		# Grab child class name
-		my $childClassName = $self->{'_child_class_name'};
-		# Instantiate child class
-		my $child;
-		eval "
-			use $childClassName;
-	  		\$child = $childClassName->new(DATAOBJ_LOADONIDSET);
-		";
-		die $@ if $@;
-		# Assign instantiated child class
-		$self->{'_child'} = $child;
-		# Use child logging method...
-		$child->_log(DATAOBJ_LOG_DEBUG,"Spawned '$childClassName' to satisfy relation requirement");
-	}
-
-	# Return the child we have or have created
-	return $self->{'_child'};
+	return $self->{'_child_class_name'};
 }
 
 
@@ -165,8 +146,6 @@ the Free Software Foundation, either version 3 of the License, or
 
 =head1 SEE ALSO
 
-L<AWITPT::DataObj>.
+L<AWITPT::DataObj>, L<AWITPT::DataObj::Relation>, L<AWITPT::DataObj::Relation::List>.
 
 =cut
-
-
