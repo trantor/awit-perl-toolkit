@@ -1565,6 +1565,14 @@ sub _relationPropertyName
 		$propertyName = $property;
 	}
 
+	# If we do infact have a relation return it
+	if (
+			!defined($self->{'_relations_map'}->{$propertyName}) ||
+			!defined($self->{'_relations_map'}->{$propertyName}->{$relationName})
+	) {
+		return;
+	}
+
 	return $self->{'_relations_map'}->{$propertyName}->{$relationName};
 }
 
