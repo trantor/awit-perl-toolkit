@@ -444,7 +444,7 @@ The C<relation[A-Z][A-Za-z0-9]+> method returns the relation management object f
 	} elsif ($function =~ /^relation([A-Z][A-Za-z0-9]+)/) {
 		my $relationName = $1;
 
-		return $self->relation($relationName,@params);
+		return $self->relation($relationName);
 
 
 =head2 [A-Z][A-Za-z0-9]+
@@ -459,9 +459,7 @@ The C<[A-Z][A-Za-z0-9]+> method is shorthand to refer to a relation.
 	} elsif ($function =~ /^([A-Z][A-Za-z0-9]+)/) {
 		my $relationName = $1;
 
-		return $self->relation($relationName,@params);
-
-
+		return $self->relation($relationName);
 	}
 
 	die "No such method: $AUTOLOAD";
