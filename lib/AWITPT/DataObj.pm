@@ -1262,8 +1262,8 @@ sub _init
 
 					$property->{'validate'}->{'length'} = $validateValue;
 
+				# Set params
 				} elsif ($validateOption eq "params") {
-					# Set params
 					$property->{'validate'}->{'params'} = [ @{$validateValue} ];
 				}
 			}
