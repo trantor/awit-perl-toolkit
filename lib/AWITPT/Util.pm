@@ -131,12 +131,13 @@ sub isNumber
 {
 	my ($var,$options) = @_;
 
-	$options = 0 if (!defined($options));
 
 	# Make sure we're not a ref
 	if (!isVariable($var)) {
 		return;
 	}
+
+	$options = 0 if (!defined($options));
 
 	# Strip leading 0's
 	if ($var =~ s/^(-?)0*([0-9]+)$/$1$2/) {
@@ -173,6 +174,7 @@ sub isNumber
 sub isHash
 {
 	my $var = shift;
+
 
 	# A hash cannot be undef?
 	if (!defined($var)) {
@@ -218,12 +220,13 @@ sub isDomain
 {
 	my ($var,$options) = @_;
 
-	$options = 0 if (!defined($options));
 
 	# Make sure we're not a ref
 	if (!isVariable($var)) {
 		return;
 	}
+
+	$options = 0 if (!defined($options));
 
 	# Lowercase it
 	$var = lc($var);
@@ -249,12 +252,13 @@ sub isUsername
 {
 	my ($var,$options) = @_;
 
-	$options = 0 if (!defined($options));
 
 	# Make sure we're not a ref
 	if (!isVariable($var)) {
 		return;
 	}
+
+	$options = 0 if (!defined($options));
 
 	# Lowercase it
 	$var = lc($var);
@@ -290,12 +294,14 @@ sub isDatabaseName
 {
 	my ($var,$options) = @_;
 
-	$options = 0 if (!defined($options));
+
 
 	# Make sure we're not a ref
 	if (!isVariable($var)) {
 		return;
 	}
+
+	$options = 0 if (!defined($options));
 
 	# Lowercase it
 	$var = lc($var);
