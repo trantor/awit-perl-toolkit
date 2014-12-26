@@ -557,6 +557,7 @@ sub validate
 		$self->_log(DATAOBJ_LOG_ERROR,"Property '$propertyName' not found");
 	}
 
+	# Grab validation type
 	my $validateType;
 	if (defined($property->{'validate'})) {
 		$validateType = $property->{'validate'}->{'type'};
