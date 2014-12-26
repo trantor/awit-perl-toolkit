@@ -156,10 +156,13 @@ sub _relationChild
 		$self->_relationParentObject()->_log(DATAOBJ_LOG_DEBUG,"Spawning '$childClassName' to satisfy relation requirement");
 		# Instantiate child class
 		my $child;
+		# NK: Using a string here is probably the only way we can safely test the load?
+		## no critic (ProhibitStringyEval)
 		eval "
 			use $childClassName;
 			\$child = ${childClassName}->new(DATAOBJ_LOADONIDSET);
 		";
+		## use critic
 		die $@ if $@;
 		# Assign instantiated child class
 		$self->{'_child'} = $child;

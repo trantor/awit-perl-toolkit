@@ -1324,11 +1324,15 @@ sub _init
 				$self->_log(DATAOBJ_LOG_DEBUG2,"    - Associate '%s' => '%s'",$ourProperty,$relationPropertyName);
 
 				# Try instantiate class
+				my $relationModule = "AWITPT::DataObj::Relation::$type";
 				my $relationHandler;
+				# NK: Using a string here is probably the only way we can safely test the load?
+				## no critic (ProhibitStringyEval)
 				eval "
-					use AWITPT::DataObj::Relation::$type;
-					\$relationHandler = AWITPT::DataObj::Relation::${type}->new(\$self,'$class');
+					use $relationModule;
+					\$relationHandler = ${relationModule}->new(\$self,\$class);
 				";
+				## use critic
 				die $@ if $@;
 
 				# Check if we actually got something back
