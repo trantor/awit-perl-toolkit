@@ -1108,7 +1108,9 @@ sub clone
 	$self->_log(DATAOBJ_LOG_DEBUG,"Object cloned");
 
 	# Load hash
-	$self->loadHash(@data);
+	if (@data) {
+		$self->loadHash(@data);
+	}
 
 	return $clone;
 }
