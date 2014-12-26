@@ -65,6 +65,9 @@ our (@EXPORT,@EXPORT_OK);
 
 	ISUSERNAME_ALLOW_ATSIGN
 
+	ISEMAIL_ALLOW_NOUSER
+	ISEMAIL_ALLOW_NODOMAIN
+
 	ISDATE_YEAR
 	ISDATE_MONTH
 	ISDATE_DAY
@@ -80,6 +83,9 @@ use constant {
 	ISNUMBER_ALLOW_NEGATIVE => 2,
 
 	ISUSERNAME_ALLOW_ATSIGN => 1,
+
+	ISEMAIL_ALLOW_NOUSER => 1,
+	ISEMAIL_ALLOW_NODOMAIN => 1,
 
 	ISDATE_YEAR => 1,
 	ISDATE_MONTH => 2,
@@ -485,21 +491,22 @@ sub isDate
 # Check if a variable is a valid email address
 #
 # @param var Variable to check
+# @param options Optional check options
+# ISEMAIL_ALLOW_NOUSER: Allow no user portion of email address
+# ISEMAIL_ALLOW_NODOMAIN: Allow no domain portion of email address
 #
 # @return $var or undef
 sub isEmail
 {
-	my $var = shift;
+	my ($var,$options) = @_;
 
-	# Make sure we're defined
-	if (!defined($var)) {
-		return;
-	}
 
 	# Make sure we're not a ref
 	if (!isVariable($var)) {
 		return;
 	}
+
+	$options = 0 if (!defined($options));
 
 	# Check IPv4
 	if ($var =~ /^(?:\d{1,3})(?:\.(?:\d{1,3})(?:\.(?:\d{1,3})(?:\.(?:\d{1,3}))?)?)?(?:\/(\d{1,2}))?$/) {
@@ -519,12 +526,16 @@ sub isEmail
 			if (!$user =~ /^\S+$/i) {
 				return;
 			}
+		} elsif (($options & ISEMAIL_ALLOW_NOUSER) != ISEMAIL_ALLOW_NOUSER) {
+			return;
 		}
 
 		if (defined($domain)) {
 			if (!$domain =~ /^(?:[a-z0-9\-_\*]+\.)+[a-z0-9]+$/i) {
 				return;
 			}
+		} elsif (($options & ISEMAIL_ALLOW_NODOMAIN) != ISEMAIL_ALLOW_NODOMAIN) {
+			return;
 		}
 
 		return $var;
