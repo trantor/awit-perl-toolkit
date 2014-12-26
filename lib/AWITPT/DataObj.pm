@@ -1252,16 +1252,14 @@ sub _init
 					# Set type
 					$property->{'validate'}->{'type'} = $validateValue;
 
+				# Set length
 				} elsif ($validateOption eq "length") {
 					# Length must be > 0
-					if (
-						$validateValue < 1
-					) {
+					if ($validateValue < 1) {
 						$self->_log(DATAOBJ_LOG_ERROR,"Property '%s' has an invalid validation type '%s'",$propertyName,
 								$validateValue);
 					}
 
-					# Set length
 					$property->{'validate'}->{'length'} = $validateValue;
 
 				} elsif ($validateOption eq "params") {
