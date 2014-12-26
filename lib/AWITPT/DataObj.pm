@@ -1282,25 +1282,14 @@ sub _init
 				$property->{'validate'}->{'type'} = "regex";
 			}
 
-			# We must always have a type
-			if (!defined($property->{'validate'}->{'type'})) {
-					$self->_log(DATAOBJ_LOG_ERROR,"Property '%s' has no validation",$propertyName);
-			}
-
-			# Check that the regex type has a regex argument
-			if ($property->{'validate'}->{'type'} eq "regex" && !defined($property->{'validate'}->{'regex'})) {
-					$self->_log(DATAOBJ_LOG_ERROR,"Property '%s' has a regex validation type, but no regex",$propertyName);
-			}
-
-			# Check that the regex type has a regex argument
-			if (defined($property->{'validate'}->{'regex'}) && ref($property->{'validate'}->{'regex'}) ne "Regexp") {
-				$self->_log(DATAOBJ_LOG_ERROR,"Property '%s' has a regex match but not a type consistent with qr( /.../ )",
-						$propertyName);
-			}
-
 			# Check if we have a type set
 			if (!defined($property->{'validate'}->{'type'})) {
 				$self->_log(DATAOBJ_LOG_ERROR,"Property '%s' has no validation type set",$propertyName);
+			}
+
+			# We need the 'regex' option for regexes
+			if ($property->{'validate'}->{'type'} eq "regex" && !defined($property->{'validate'}->{'regex'})) {
+				$self->_log(DATAOBJ_LOG_ERROR,"Property '%s' has a regex validation type, but no regex",$propertyName);
 			}
 
 			$self->_log(DATAOBJ_LOG_DEBUG2,"   - Property '%s' has validation type '%s'",$propertyName,
