@@ -1265,6 +1265,15 @@ sub _init
 				# Set params
 				} elsif ($validateOption eq "params") {
 					$property->{'validate'}->{'params'} = [ @{$validateValue} ];
+
+				# Set regex
+				} elsif ($validateOption eq "regex") {
+					$property->{'validate'}->{'regex'} = $validateValue;
+					# Check that the regex type has a regex argument
+					if (ref($property->{'validate'}->{'regex'}) ne "Regexp") {
+						$self->_log(DATAOBJ_LOG_ERROR,"Property '%s' has a regex match but not a type consistent with qr( /.../ )",
+								$propertyName);
+					}
 				}
 			}
 
