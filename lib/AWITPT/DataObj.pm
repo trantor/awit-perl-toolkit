@@ -1327,7 +1327,7 @@ sub _init
 				my $relationHandler;
 				eval "
 					use AWITPT::DataObj::Relation::$type;
-					\$relationHandler = AWITPT::DataObj::Relation::${type}->new('$class');
+					\$relationHandler = AWITPT::DataObj::Relation::${type}->new(\$self,'$class');
 				";
 				die $@ if $@;
 
