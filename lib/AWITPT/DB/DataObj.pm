@@ -428,25 +428,6 @@ sub remove
 
 
 
-=head2 clone
-
-	my $clonedObj = $dataObj->clone();
-
-The C<clone> method returns a clone of the current object.
-
-=cut
-
-# Clone ourselves
-sub clone
-{
-	my ($self,@data) = @_;
-
-
-	return $self->SUPER::clone(@data);
-}
-
-
-
 #
 # INTERNAL METHODS BELOW
 #
