@@ -100,6 +100,26 @@ sub new
 
 
 
+=head2 init
+
+	sub init
+	{
+		my $self = shift;
+
+		$self->{'_myinternal'} = "hello";
+	}
+
+The C<init> method is overridden in child objects to perform initialization tasks;
+
+=cut
+
+# Object initialization
+sub init
+{
+}
+
+
+
 # Autoload function to automagically handle some common things
 our $AUTOLOAD;
 sub AUTOLOAD
