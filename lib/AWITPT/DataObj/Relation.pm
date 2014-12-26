@@ -69,8 +69,13 @@ The C<new> method is used to instantiate the object, in this case a root relatio
 # Class instantiation
 sub new
 {
-	my ($class,$childClass) = @_;
+	my ($class,$parent,$childClass) = @_;
 
+
+	# Check if we firstly have a parent object
+	if (!defined($parent)) {
+		die "Parent object is required for DataObj::Relation";
+	}
 
 	# If there is no child class defined, we need to abort
 	if (!defined($childClass)) {
@@ -79,12 +84,16 @@ sub new
 
 	# These are our internal properties
 	my $self = {
+		'_parent' => $parent,
 		'_child' => undef,
 		'_child_class_name' => $childClass
 	};
 
 	# Build our class
 	bless($self, $class);
+
+	# Initialize the object
+	$self->init($parent,$childClass);
 
 	return $self;
 }
@@ -149,6 +158,28 @@ sub _relationChildClass
 
 
 	return $self->{'_child_class_name'};
+}
+
+
+
+# Return relation parent object
+sub _relationParentObject
+{
+	my $self = shift;
+
+
+	return $self->{'_parent'};
+}
+
+
+
+# We need a specialized destroyer here to dispose of the reference to the parent object as it references us too
+sub DESTROY
+{
+	my $self = shift;
+
+
+	delete($self->{'_parent'});
 }
 
 
