@@ -755,7 +755,7 @@ sub relation
 		$self->_log(DATAOBJ_LOG_ERROR,"Relation '%s' not found",$relationName);
 	}
 
-	return $self->_relation($relationName);
+	return $relation;
 }
 
 
