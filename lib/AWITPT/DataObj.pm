@@ -570,6 +570,14 @@ sub validate
 		}
 	}
 
+	# Grab validation parameters, and allow overriding
+	my @validateParams;
+	if (@params > 0) {
+		@validateParams = @params;
+	} elsif (defined($property->{'validate'}->{'params'})) {
+		@validateParams = @{$property->{'validate'}->{'params'}};
+	}
+
 	# Check this is a normal variable
 	if (!defined(isVariable($value))) {
 		$self->_log(DATAOBJ_LOG_INFO,"Validation of '%s' failed variable",$property->{'name'});
@@ -634,7 +642,7 @@ sub validate
 	# Validate 'email' type
 	} elsif ($validateType eq "email") {
 		# Validate email address
-		if (!isEmail($value)) {
+		if (!isEmail($value,@validateParams)) {
 			$self->_log(DATAOBJ_LOG_INFO,"Validation of '%s' failed email",$property->{'name'});
 			$self->_error("Validation of '".$property->{'name'}."' failed");
 			return;
@@ -645,7 +653,7 @@ sub validate
 	# Validate 'username' type
 	} elsif ($validateType eq "username") {
 		# Validate username
-		if (!isUsername($value,@params)) {
+		if (!isUsername($value,@validateParams)) {
 			$self->_log(DATAOBJ_LOG_INFO,"Validation of '%s' failed username",$property->{'name'});
 			$self->_error("Validation of '".$property->{'name'}."' failed");
 			return;
@@ -687,7 +695,7 @@ sub validate
 	# Validate 'number' type
 	} elsif ($validateType eq "number") {
 		# Validate username
-		if (!defined($value = isNumber($value,@params))) {
+		if (!defined($value = isNumber($value,@validateParams))) {
 			$self->_log(DATAOBJ_LOG_INFO,"Validation of '%s' failed number",$property->{'name'});
 			$self->_error("Validation of '".$property->{'name'}."' failed");
 			return;
@@ -705,7 +713,7 @@ sub validate
 
 			# Grab validated value and compare
 			my $validateMethod = "validate$relationPropertyName";
-			my $validatedValue = $self->_relation($relationName)->$validateMethod($value,@params);
+			my $validatedValue = $self->_relation($relationName)->$validateMethod($value,@validateParams);
 			if (!defined($validatedValue) || $validatedValue ne $value) {
 				$mismatch = 1;
 				last;
