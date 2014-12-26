@@ -152,6 +152,8 @@ sub _relationChild
 	if (!defined($self->{'_child'})) {
 		# Grab child class name
 		my $childClassName = $self->_relationChildClass();
+		# Use child logging method...
+		$self->_relationParentObject()->_log(DATAOBJ_LOG_DEBUG,"Spawning '$childClassName' to satisfy relation requirement");
 		# Instantiate child class
 		my $child;
 		eval "
@@ -161,8 +163,6 @@ sub _relationChild
 		die $@ if $@;
 		# Assign instantiated child class
 		$self->{'_child'} = $child;
-		# Use child logging method...
-		$child->_log(DATAOBJ_LOG_DEBUG,"Spawned '$childClassName' to satisfy relation requirement");
 	}
 
 	# Return the child we have or have created
