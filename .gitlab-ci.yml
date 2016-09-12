@@ -9,6 +9,7 @@ code-quality:
     - export DEBIAN_FRONTEND=noninteractive
     - apt-get update
     - apt-get dist-upgrade -y
+    - apt-get install -y perl-modules
     - apt-get install -y libperl-critic-perl make
     - perlcritic --gentle "$CI_PROJECT_DIR"
 
@@ -18,6 +19,7 @@ make-test:
     - export DEBIAN_FRONTEND=noninteractive
     - apt-get update
     - apt-get dist-upgrade -y
+    - apt-get install -y perl-modules
     - apt-get install -y make
     - cd "$CI_PROJECT_DIR"
     - perl Makefile.PL
@@ -29,6 +31,7 @@ make-install:
     - export DEBIAN_FRONTEND=noninteractive
     - apt-get update
     - apt-get dist-upgrade -y
+    - apt-get install -y perl-modules
     - apt-get install -y make
     - cd "$CI_PROJECT_DIR"
     - perl Makefile.PL
