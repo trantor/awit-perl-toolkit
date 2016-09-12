@@ -9,5 +9,5 @@ code:
     - apt-get dist-upgrade -y
     - apt-get install -y libperl-critic-perl make
     - perl Makefile.PL
-    - make tests
+    - make test
 
