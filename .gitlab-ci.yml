@@ -23,7 +23,8 @@ make-test:
     - apt-get install -y make
     - cd "$CI_PROJECT_DIR"
     - perl Makefile.PL
-    - make test
+    - cover -test | tee devel-coverage.txt
+    - grep "^Total" devel-coverage.txt | awk '{ print "(" $8 "%) covered" }'
 
 make-install:
   stage: install
