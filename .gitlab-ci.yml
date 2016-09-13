@@ -22,7 +22,7 @@ make-test:
     - apt-get dist-upgrade -y
     - apt-get install -y perl-modules
     - apt-get install -y make
-    - apt-get install -y libdevel-cover-perl
+    - apt-get install -y libdevel-cover-perl libpod-coverage-perl
     - cd "$CI_PROJECT_DIR"
     - perl Makefile.PL
     - cover -test | tee devel-coverage.txt
