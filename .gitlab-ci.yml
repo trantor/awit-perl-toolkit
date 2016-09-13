@@ -10,7 +10,8 @@ code-quality:
     - apt-get update
     - apt-get dist-upgrade -y
     - apt-get install -y perl-modules
-    - apt-get install -y libperl-critic-perl make
+    - apt-get install -y make
+    - apt-get install -y libperl-critic-perl
     - perlcritic --gentle "$CI_PROJECT_DIR"
 
 make-test:
@@ -21,6 +22,7 @@ make-test:
     - apt-get dist-upgrade -y
     - apt-get install -y perl-modules
     - apt-get install -y make
+    - apt-get install -y libdevel-cover-perl
     - cd "$CI_PROJECT_DIR"
     - perl Makefile.PL
     - cover -test | tee devel-coverage.txt
