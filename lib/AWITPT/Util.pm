@@ -181,7 +181,7 @@ sub isHash
 		return;
 	}
 
-	return (ref($var) eq "HASH");
+	return (ref($var) eq "HASH") ? 1 : 0;
 }
 
 
@@ -202,7 +202,7 @@ sub isVariable
 		return;
 	}
 
-	return (ref($var) eq "");
+	return (ref($var) eq "") ? 1 : 0;
 }
 
 
