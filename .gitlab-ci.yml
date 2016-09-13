@@ -1,13 +1,36 @@
 stages:
+  - quality
   - tests
+  - install
 
-code:
-  stage: tests
+code-quality:
+  stage: quality
   script:
-    - DEBIAN_FRONTEND=noninteractive
+    - export DEBIAN_FRONTEND=noninteractive
     - apt-get update
     - apt-get dist-upgrade -y
     - apt-get install -y libperl-critic-perl make
+    - perlcritic --gentle "$CI_PROJECT_DIR"
+
+make-test:
+  stage: tests
+  script:
+    - export DEBIAN_FRONTEND=noninteractive
+    - apt-get update
+    - apt-get dist-upgrade -y
+    - apt-get install -y make
+    - cd "$CI_PROJECT_DIR"
     - perl Makefile.PL
     - make test
+
+make-install:
+  stage: install
+  script:
+    - export DEBIAN_FRONTEND=noninteractive
+    - apt-get update
+    - apt-get dist-upgrade -y
+    - apt-get install -y make
+    - cd "$CI_PROJECT_DIR"
+    - perl Makefile.PL
+    - make install
 
