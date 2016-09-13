@@ -16,5 +16,9 @@ lib/SOAP/Transport/HTTPng.pm
 LICENSE
 Makefile.PL
 MANIFEST			This list of files
+t/booleanize.t
+t/ishash.t
+t/isindent.t
 t/isnumber.t
+t/isvariable.t
 TODO
