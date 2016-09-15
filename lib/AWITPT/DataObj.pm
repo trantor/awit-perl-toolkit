@@ -153,7 +153,7 @@ Data object C<options> can also be specified to customize the objects behavior.
 
 =head3 Options
 
-Each object supports options described below...
+Each object supports options being passed as a parameter to C<new> described below...
 
 	'options' => OPTION1 | OPTION2
 
