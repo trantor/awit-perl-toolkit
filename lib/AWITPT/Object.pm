@@ -103,9 +103,7 @@ sub new
 	bless($self, $class);
 
 	# And initialize
-	$self->_init(@params);
-
-	return $self;
+	return $self->_init(@params);
 }
 
 
