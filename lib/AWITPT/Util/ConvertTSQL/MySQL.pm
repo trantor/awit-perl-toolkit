@@ -1,4 +1,4 @@
-# AWIT Object
+# TSQL conversion to MySQL
 # Copyright (C) 2016, AllWorldIT
 #
 # This program is free software: you can redistribute it and/or modify
@@ -18,47 +18,27 @@
 
 =head1 NAME
 
-AWITPT::Object - AWITPT Object
+AWITPT::Util::ConvertTSQL::MySQL - TSQL conversion to MySQL
 
 =head1 SYNOPSIS
 
-	#
-	# Create a class
-	#
-	package myobject;
-	use AWITPT::Object 1.00;
-	use base 'AWITPT::Object';
-
-	use strict;
-	use warnings;
-
-	our $VERSION = '1.000';
-
-	# Create a method
-	sub mymethod
-	{
-		return "hello world";
-	}
-
-
-	#
-	# Use your object
-	#
-	my $myboject = myobject->new();
-
+	my $tsql = AWITPT::Util::ConvertTSQL->new('MySQL','prefix' => "myapp_");
 
 =head1 DESCRIPTION
 
-The AWITPT::Object class provides a basic abstraction layer to Perl objects.
+The AWITPT::Util::ConvertTSQL::MySQL class provides TSQL conversion to MySQL.
+
+
 
 =cut
 
 
-package AWITPT::Object;
-use parent 'Exporter';
+package AWITPT::Util::ConvertTSQL::MySQL;
 
 use strict;
 use warnings;
+
+use base 'AWITPT::Util::ConvertTSQL';
 
 our $VERSION = "1.000";
 
@@ -72,39 +52,25 @@ our (@EXPORT,@EXPORT_OK);
 
 =head1 METHODS
 
-C<AWITPT::Object> provides the below manipulation methods.
+C<AWITPT::Util::ConvertTSQL::MySQL> provides the below methods.
 
 =cut
-
 
 
 =head2 new
 
-	my $obj = AWITPT::Object->new(@params);
+This class is instantiated by the parent class.
 
-The C<new> method is used to instantiate the object.
+The C<new> method is used to instantiate the object, it supports some options including 'prefix' which can be used to set the
+table prefix for the resulting SQL.
+
+=head3 'prefix'
+
+Allow the specification of the resulting table prefixes.
 
 =over
 
-=back
-
 =cut
-
-# Class instantiation
-sub new
-{
-	my ($class,@params) = @_;
-
-	# These are our internal properties
-	my $self = {
-	};
-
-	# Build our class
-	bless($self, $class);
-
-	# And initialize
-	return $self->_init(@params);
-}
 
 
 
@@ -114,28 +80,25 @@ sub new
 
 
 
-=head2 _init
-
-	sub _init
-	{
-		my ($self,@params) = @_;
-
-		return SUPER::_init(@params);
-	}
-
-The C<_init> method is called during class instantiation before its returned from the new() method.
-
-=over
-
-=back
-
-=cut
-
 # Initialize internals of the object
-sub _init
+sub _config
 {
 	my ($self,@params) = @_;
 
+
+	# Call parent config
+	$self->SUPER::_config(@params);
+
+	$self->substitute('@PRELOAD@','SET FOREIGN_KEY_CHECKS=0;');
+	$self->substitute('@POSTLOAD@','SET FOREIGN_KEY_CHECKS=1;');
+	$self->substitute('@CREATE_TABLE_SUFFIX@','ENGINE=InnoDB CHARACTER SET latin1 COLLATE latin1_bin');
+
+	$self->substitute('@SERIAL_TYPE@','SERIAL');
+	$self->substitute('@SERIAL_REF_TYPE@','BIGINT UNSIGNED');
+	$self->substitute('@BIG_INTEGER_UNSIGNED@','BIGINT UNSIGNED');
+	$self->substitute('@INT_UNSIGNED@','INT UNSIGNED');
+
+	$self->substitute('@TRACK_KEY_LEN@','512');
 
 	return $self;
 }
@@ -165,6 +128,6 @@ the Free Software Foundation, either version 3 of the License, or
 
 =head1 SEE ALSO
 
-L<AWITPT::DataObj>.
+L<AWITPT::Util::ConvertTSQL>, L<AWITPT::DataObj>.
 
 =cut
