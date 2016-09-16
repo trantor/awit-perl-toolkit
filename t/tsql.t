@@ -1,7 +1,5 @@
-#!/usr/bin/perl
-# Database translation/creation script
-# Copyright (C) 2009-2016, AllWorldIT
-# Copyright (C) 2008, LinuxRulz
+# Test harness for AWITPT::Util::ConvertTSQL
+# Copyright (C) 2014-2016, AllWorldIT
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,24 +15,26 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+use Test::More;
 
 
 use strict;
 use warnings;
 
 
-use Config;
-use FindBin;
-use lib ("$FindBin::Bin/../share/perl5", "$FindBin::Bin/../share/perl/$Config{'version'}");
-
-
-use AWITPT::Util::ConvertTSQL::client;
+use AWITPT::Util::ConvertTSQL;
 
 
 
-# Grab and exit with result received
-my $res = AWITPT::Util::ConvertTSQL::client->run();
-exit($res);
+# Make sure invalid subclass returns undef
+my $tsqlc = AWITPT::Util::ConvertTSQL->new("NOTEXIST");
+is($tsqlc,undef,"An invalid database type must return undef");
+
+
+
+
+
+done_testing();
 
 
 

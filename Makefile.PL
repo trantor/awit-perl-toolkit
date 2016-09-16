@@ -26,11 +26,11 @@ use ExtUtils::MakeMaker;
 
 
 WriteMakefile(
-	NAME => 'AWITPT',
-	VERSION_FROM => "lib/AWITPT/Version.pm",
+	'NAME' => 'AWITPT',
+	'VERSION_FROM' => "lib/AWITPT/Version.pm",
 
-	EXE_FILES => [qw( bin/convert-tsql )],
-	MAN3PODS => {
+	'EXE_FILES' => [qw( bin/convert-tsql )],
+	'MAN3PODS' => {
 		'lib/AWITPT/DataObj.pm'    => '$(INST_MAN3DIR)/AWITPT::DataObj.3',
 		'lib/AWITPT/DB/DataObj.pm'    => '$(INST_MAN3DIR)/AWITPT::DB::DataObj.3'
 	},
