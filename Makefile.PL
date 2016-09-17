@@ -27,12 +27,21 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
 	'NAME' => 'AWITPT',
+
 	'VERSION_FROM' => "lib/AWITPT/Version.pm",
 
-	'EXE_FILES' => [qw( bin/convert-tsql )],
+	'EXE_FILES' => [qw(
+		bin/convert-tsql
+	)],
+
 	'MAN3PODS' => {
-		'lib/AWITPT/DataObj.pm'    => '$(INST_MAN3DIR)/AWITPT::DataObj.3',
-		'lib/AWITPT/DB/DataObj.pm'    => '$(INST_MAN3DIR)/AWITPT::DB::DataObj.3'
+		'lib/AWITPT/DataObj.pm' => '$(INST_MAN3DIR)/AWITPT::DataObj.3',
+		'lib/AWITPT/DB/DataObj.pm' => '$(INST_MAN3DIR)/AWITPT::DB::DataObj.3',
+		'lib/AWITPT/Util/ConvertTSQL.pm' => '$(INST_MAN3DIR)/AWITPT::Util::ConvertTSQL.3',
+		'lib/AWITPT/Util/ConvertTSQL/client.pm' => '$(INST_MAN3DIR)/AWITPT::Util::ConvertTSQL::client.3',
+		'lib/AWITPT/Util/ConvertTSQL/MySQL.pm' => '$(INST_MAN3DIR)/AWITPT::Util::ConvertTSQL::MySQL.3',
+		'lib/AWITPT/Util/ConvertTSQL/PgSQL.pm' => '$(INST_MAN3DIR)/AWITPT::Util::ConvertTSQL::PgSQL.3',
+		'lib/AWITPT/Util/ConvertTSQL/SQLite.pm' => '$(INST_MAN3DIR)/AWITPT::Util::ConvertTSQL::SQLite.3',
 	},
 );
 
