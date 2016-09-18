@@ -374,10 +374,10 @@ sub isBoolean
 	$var =~ s/\s//g;
 
 	# Allow true, on, set, enabled, 1, false, off, unset, disabled, 0
-	if ($var =~ /^(?:true|on|set|enabled|1)$/i) {
+	if ($var =~ /^(?:true|on|set|enabled|yes|1)$/i) {
 		return 1;
 	}
-	if ($var =~ /^(?:false|off|unset|disabled|0)$/i) {
+	if ($var =~ /^(?:false|off|unset|disabled|no|0)$/i) {
 		return 0;
 	}
 
