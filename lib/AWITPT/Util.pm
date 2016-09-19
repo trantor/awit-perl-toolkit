@@ -1,5 +1,5 @@
 # Utility functions
-# Copyright (C) 2008-2014, AllWorldIT
+# Copyright (C) 2008-2016, AllWorldIT
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -373,7 +373,7 @@ sub isBoolean
 	# Nuke whitespaces
 	$var =~ s/\s//g;
 
-	# Allow true, on, set, enabled, 1, false, off, unset, disabled, 0
+	# Allow true, on, set, enabled, yes, 1, false, off, unset, disabled, no, 0
 	if ($var =~ /^(?:true|on|set|enabled|yes|1)$/i) {
 		return 1;
 	}
