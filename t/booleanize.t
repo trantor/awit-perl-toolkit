@@ -48,6 +48,8 @@ is(booleanize("SeT"),1,"Booleanize of 'SeT' should return 1");
 
 is(booleanize("EnAblED"),1,"Booleanize of 'EnAblED' should return 1");
 
+is(booleanize("yes"),1,"Booleanize of 'yes' should return 1");
+
 is(booleanize(1),1,"Booleanize of 1 should return 1");
 
 is(booleanize("1"),1,"Booleanize of '1' should return 1");

@@ -343,8 +343,8 @@ sub booleanize
 	# Nuke whitespaces
 	$var =~ s/\s//g;
 
-	# Allow true, on, set, enabled, 1
-	if ($var =~ /^(?:true|on|set|enabled|1)$/i) {
+	# Allow true, on, set, enabled, yes, 1
+	if ($var =~ /^(?:true|on|set|enabled|yes|1)$/i) {
 		return 1;
 	}
 
