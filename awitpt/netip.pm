@@ -29,16 +29,8 @@ package awitpt::netip;
 use strict;
 use warnings;
 
-use Socket;
-BEGIN {
-	if (defined &Socket::inet_pton) {
-		Socket->import(qw(inet_pton AF_INET6));
-	} else {
-		require Socket6;
-		Socket6->import(qw(inet_pton AF_INET6));
-	}
-};
-
+use Socket qw(inet_aton);
+use Socket6 qw(inet_pton AF_INET6);
 
 # Our current error message
 my $error = "";
@@ -197,7 +189,7 @@ sub to_network
 sub _cidr2mask_v4 {
 	my $self = shift;
 
-    return pack "N", 0xffffffff << (32 - $self->{'cidr'});
+	return pack "N", 0xffffffff << (32 - $self->{'cidr'});
 }
 
 
@@ -205,27 +197,29 @@ sub _cidr2mask_v4 {
 sub _cidr2mask_v6 {
 	my $self = shift;
 
-    return pack('B128', '1' x $self->{'cidr'});
+	return pack('B128', '1' x $self->{'cidr'});
 }
 
 
 # Function to match an v4 address
 sub _ipv4_matcher {
+	no locale;
 	my ($self,$test) = @_;
 
-    my $mask = $test->_cidr2mask_v4();
+	my $mask = $test->_cidr2mask_v4();
 
-    return ((inet_aton($test->{'ip'}) & $mask) eq (inet_aton($self->{'ip'}) & $mask));
+	return ((inet_aton($test->{'ip'}) & $mask) eq (inet_aton($self->{'ip'}) & $mask)) ? 1 : 0;
 }
 
 
 # Function to match an v6 address
 sub _ipv6_matcher {
+	no locale;
 	my ($self,$test) = @_;
 
-    my $mask = $test->_cidr2mask_v6();
+	my $mask = $test->_cidr2mask_v6();
 
-    return ((inet_pton(AF_INET6,$test->{'ip'}) & $mask) eq (inet_pton(AF_INET6, $self->{'ip'}) & $mask));
+	return ((inet_pton(AF_INET6,$test->{'ip'}) & $mask) eq (inet_pton(AF_INET6, $self->{'ip'}) & $mask)) ? 1 : 0;
 }
 
 
