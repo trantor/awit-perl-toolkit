@@ -31,16 +31,8 @@ use warnings;
 
 our $VERSION = "1.000";
 
-use Socket;
-BEGIN {
-	if (defined &Socket::inet_pton) {
-		Socket->import(qw(inet_pton AF_INET6));
-	} else {
-		require Socket6;
-		Socket6->import(qw(inet_pton AF_INET6));
-	}
-};
-
+use Socket qw(inet_aton);
+use Socket6 qw(inet_pton AF_INET6);
 
 # Our current error message
 my $error = "";
@@ -213,6 +205,7 @@ sub _cidr2mask_v6 {
 
 # Function to match an v4 address
 sub _ipv4_matcher {
+	no locale;
 	my ($self,$test) = @_;
 
 	my $mask = $test->_cidr2mask_v4();
@@ -224,6 +217,7 @@ sub _ipv4_matcher {
 
 # Function to match an v6 address
 sub _ipv6_matcher {
+	no locale;
 	my ($self,$test) = @_;
 
 	my $mask = $test->_cidr2mask_v6();
