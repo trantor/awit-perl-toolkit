@@ -386,7 +386,7 @@ sub DBLastInsertID
 	}
 
 	my $res;
-	if (!($res = $dbh->lastInsertID(undef,undef,$table,$column))) {
+	if (!($res = $dbh->lastInsertID($table,$column))) {
 		_error("Error getting last inserted id: ".$dbh->error());
 		return;
 	}
