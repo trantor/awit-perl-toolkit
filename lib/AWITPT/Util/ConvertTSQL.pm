@@ -187,7 +187,7 @@ sub _init
 		};
 		# Check if the eval succeeded
 		if ($@) {
-			warn "AWITPT::Util::ConvertTSQL::$subClass not found";
+			warn "AWITPT::Util::ConvertTSQL::$subClass could not be loaded: $@";
 			return;
 		};
 
