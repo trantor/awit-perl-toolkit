@@ -1576,7 +1576,7 @@ warn sprintf("  - THIS IS A RELATION  '%s' [%s => %s] ",$property->{'name'},$rel
 		}
 	}
 
-	$self->_log(DATAOBJ_LOG_DEBUG,"Property '%s' set to '%s'",$property->{'name'},$value);
+	$self->_log(DATAOBJ_LOG_DEBUG,"Property '%s' set to %s",$property->{'name'},defined($value) ? "'$value'" : '-undef-');
 	$self->{'_data'}->{$property->{'name'}} = $value;
 
 	return $self;
@@ -1593,7 +1593,7 @@ sub _get
 	# No matter what the case, we will still find our property
 	if (my $property = $self->_propertyByName($propertyName)) {
 		my $value = $self->{'_data'}->{$property->{'name'}};
-		$self->_log(DATAOBJ_LOG_DEBUG,"Property '%s' retrieved value '%s'",$propertyName,prettyUndef($value));
+		$self->_log(DATAOBJ_LOG_DEBUG,"Property '%s' retrieved value %s",$propertyName,defined($value) ? "'$value'" : '-undef-');
 		return $value;
 	}
 
