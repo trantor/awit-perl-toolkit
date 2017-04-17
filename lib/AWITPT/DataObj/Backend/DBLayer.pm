@@ -70,17 +70,11 @@ use warnings;
 use AWITPT::DataObj 3.01;
 use parent -norequire, 'AWITPT::DataObj';
 
+
+our $VERSION = 2.01;
+
 our (@ISA,@EXPORT,@EXPORT_OK);
-# Re-export our parents constants
 @EXPORT = qw(
-	DATAOBJ_LOADONIDSET
-
-	DATAOBJ_PROPERTY_READONLY
-	DATAOBJ_PROPERTY_NOLOAD
-	DATAOBJ_PROPERTY_ID
-	DATAOBJ_PROPERTY_NOSAVE
-
-	DATAOBJ_RELATION_READONLY
 );
 @EXPORT_OK = qw(
 );
@@ -168,7 +162,7 @@ sub records
 				FROM
 					%s
 			",
-			join(',',$self->_properties(DATAOBJ_PROPERTY_ALL ^ DATAOBJ_PROPERTY_NOLOAD)),
+			join(',',$self->_propertiesWithout(DATAOBJ_PROPERTY_NOLOAD)),
 			$self->table()
 		)
 	);
@@ -183,7 +177,7 @@ sub records
 
 	# Add each row as another record
 	my @records;
-	while (my $row = hashifyLCtoMC($sth->fetchrow_hashref(), $self->_properties(DATAOBJ_PROPERTY_ALL))) {
+	while (my $row = hashifyLCtoMC($sth->fetchrow_hashref(), $self->_properties())) {
 		# We use clone to clone the current child class, and reset to reset the object entirely
 		my $record = $self->clone()->reset()->_loadHash($row);
 		push(@records,$record);
@@ -242,7 +236,7 @@ sub load
 				WHERE
 					%s
 			',
-			join(',',$self->_properties(DATAOBJ_PROPERTY_ALL ^ DATAOBJ_PROPERTY_NOLOAD)),
+			join(',',$self->_propertiesWithout(DATAOBJ_PROPERTY_NOLOAD)),
 			$self->table(),
 			join(' AND ',@whereItems)
 		),
@@ -258,7 +252,7 @@ sub load
 	}
 
 	# Grab row
-	my $row = hashifyLCtoMC($sth->fetchrow_hashref(),$self->_properties(DATAOBJ_PROPERTY_ALL));
+	my $row = hashifyLCtoMC($sth->fetchrow_hashref(),$self->_properties());
 
 	$self->_loadHash($row);
 
@@ -283,17 +277,21 @@ containing "0E0" will be returned. On error undef on will be returned.
 # Commit record to database
 sub commit
 {
-	my $self = shift;
+	my ($self,@params) = @_;
 
+
+	# We must call the parent _commit()
+	$self->SUPER::commit(@params);
 
 	# Abort if we don't have updates
 	my $changed = $self->changed();
 	my %data;
 
 	# Loop with changed and add to data
-	foreach my $propertyName ($self->_properties(DATAOBJ_PROPERTY_ALL ^ DATAOBJ_PROPERTY_NOSAVE)) {
+	foreach my $propertyName ($self->_propertiesWithout(DATAOBJ_PROPERTY_NOSAVE)) {
 		# If its a changed item add it to the data we going to pass to the DB
 		if (exists($changed->{$propertyName})) {
+			$self->_log(DATAOBJ_LOG_DEBUG2,"Property '%s' changed, added to commit",$propertyName);
 			$data{$propertyName} = $changed->{$propertyName};
 		}
 	}

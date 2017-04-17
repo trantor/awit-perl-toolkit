@@ -75,11 +75,12 @@ our (@EXPORT,@EXPORT_OK);
 @EXPORT = qw(
 	DATAOBJ_LOADONIDSET
 
-	DATAOBJ_PROPERTY_ALL
 	DATAOBJ_PROPERTY_READONLY
 	DATAOBJ_PROPERTY_NOLOAD
-	DATAOBJ_PROPERTY_ID
 	DATAOBJ_PROPERTY_NOSAVE
+	DATAOBJ_PROPERTY_ID
+	DATAOBJ_PROPERTY_REQUIRED
+	DATAOBJ_PROPERTY_ALL
 
 	DATAOBJ_RELATION_READONLY
 
@@ -104,8 +105,13 @@ use constant {
 	'DATAOBJ_PROPERTY_NOLOAD' => 2,
 	# Do not save this field to DB
 	'DATAOBJ_PROPERTY_NOSAVE' => 4,
-	# Combination of above
+
+	# Combination of READONLY and NOSAVE
 	'DATAOBJ_PROPERTY_ID' => 5,
+
+	# This property must be set before doing a commit
+	'DATAOBJ_PROPERTY_REQUIRED' => 8,
+
 	# Match property
 	'DATAOBJ_PROPERTY_ALL' => 255,
 
@@ -217,19 +223,24 @@ Below is a list of supported options:
 =over
 
 =item *
-B<DATAOBJ_PROPERTY_READONLY>
-
-Internal use, this property cannot be set
-
-=item *
 B<DATAOBJ_PROPERTY_NOLOAD>
 
-This property is not loaded from the database
+This property will not be loaded.
 
 =item *
 B<DATAOBJ_PROPERTY_NOSAVE>
 
-This property is not saved to the database
+This property is not saved.
+
+=item *
+B<DATAOBJ_PROPERTY_READONLY>
+
+Ensure this property cannot be set using ->setXXX().
+
+=item *
+B<DATAOBJ_PROPERTY_REQUIRED>
+
+This property must be set before using ->commit().
 
 =back
 
@@ -793,7 +804,7 @@ sub asHash
 
 	# Build up reply
 	my %data;
-	foreach my $property ($self->_properties(DATAOBJ_PROPERTY_ALL)) {
+	foreach my $property ($self->_properties()) {
 		# We allow retrieval of data if the get method has been overridden
 		my $method = "get$property";
 		$data{$property} = $self->$method($property);
@@ -996,7 +1007,7 @@ sub dataLoaded
 
 The C<commit> method is used to commit the record, this means updating it if it exists or inserting it if it does not yet exist.
 
-NOTE: This method must be implemented by child classes.
+NOTE: This method must be implemented by child classes and must call the super class $self->SUPER::commit(@params).
 
 =cut
 
@@ -1005,10 +1016,17 @@ sub commit
 {
 	my $self = shift;
 
+	# Loop with changed and add to data
+	foreach my $propertyName ($self->_propertiesWithOnly(DATAOBJ_PROPERTY_REQUIRED)) {
+		warn "BAM1: $propertyName";
+		# Check if this property is set
+		if (!defined($self->_get($propertyName))) {
+			warn "BAM2: $propertyName";
+			$self->_log(DATAOBJ_LOG_ERROR,"Property '%s' must be set before calling commit()",$propertyName);
+		}
+	}
 
-	$self->_log(DATAOBJ_LOG_ERROR,"The 'commit' method needs to be implemented");
-
-	return;
+	return $self;
 }
 
 
@@ -1443,9 +1461,12 @@ sub _propertyByName
 
 
 # Get properties
+# Without options returns an array of all object properties.
+# If the $match option is specified it is AND'd against the property options, if there is a non 0 result, the property is returned.
+# If the $resultTest option is specified, the return from the AND is tested against this to see if it matches.
 sub _properties
 {
-	my ($self,$match) = @_;
+	my ($self,$match,$resultTest) = @_;
 
 
 	my @properties;
@@ -1454,13 +1475,58 @@ sub _properties
 	foreach my $propertyName (keys %{$self->{'_properties'}}) {
 		my $property = $self->{'_properties'}->{$propertyName};
 
-		# Check if there is no match criteria, or the criteria matches
-		if (!defined($match) || $match == 0 || !($property->{'options'} & ~$match)) {
-			push(@properties,$propertyName);
+		# If there is no match specified, it means all
+		if (!defined($match)) {
+			goto ADD_PROPERTY;	
 		}
+
+		# AND the match against the options
+		my $resultBits = $property->{'options'} & $match;
+
+		# If we do infact have a resultTest specified, check it
+		if (defined($resultTest)) {
+			# NK: We cannot add this to the IF above, as we have an else on the above test below
+			if ($resultBits == $resultTest) {
+				goto ADD_PROPERTY;	
+			}
+
+		# If we do not have a result test, check if we got something back, if so, its a match
+		} elsif ($resultBits) {
+			goto ADD_PROPERTY;	
+		}
+
+		# Nothing matches, so go to next property
+		next;
+
+		# Something matched and we ended up here
+ADD_PROPERTY:
+		push(@properties,$propertyName);
+
 	}
 
 	return @properties;
+}
+
+
+
+# Helper function, Returns items with only an option set
+sub _propertiesWithOnly
+{
+	my ($self,$option) = @_;
+
+
+	return $self->_properties($option,$option);
+}
+
+
+
+# Helper function, returns items without an option set
+sub _propertiesWithout
+{
+	my ($self,$option) = @_;
+
+
+	return $self->_properties(DATAOBJ_PROPERTY_ALL &~ $option);
 }
 
 
