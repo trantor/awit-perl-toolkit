@@ -1,5 +1,5 @@
 # TSQL conversion client
-# Copyright (C) 2007-2016, AllWorldIT
+# Copyright (C) 2007-2017, AllWorldIT
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,13 +39,16 @@ package AWITPT::Util::ConvertTSQL::client;
 use strict;
 use warnings;
 
-use base 'AWITPT::Object';
+use AWITPT::Object 1.01;
+use parent -norequire, 'AWITPT::Object';
+
+
+our $VERSION = 1.01;
+
 
 use AWITPT::Util::ConvertTSQL;
 use Getopt::Long qw( GetOptionsFromArray );
 
-
-our $VERSION = "1.000";
 
 
 
@@ -171,7 +174,7 @@ L<http://gitlab.devlabs.linuxassist.net/awit-frameworks/awit-perl-toolkit/issues
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2016, AllWorldIT
+Copyright (C) 2007-2017, AllWorldIT
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

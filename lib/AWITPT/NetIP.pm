@@ -1,5 +1,5 @@
 # Network IP Address Handling
-# Copyright (C) 2009-2014, AllWorldIT
+# Copyright (C) 2009-2017, AllWorldIT
 # Copyright (C) 2008, LinuxRulz
 #
 # This program is free software; you can redistribute it and/or modify
@@ -23,6 +23,8 @@
 # - Robert Anderson <randerson@lbsd.net>
 # * * *
 
+# TODO: Needs to inherit AWITPT::Object
+# TODO: Needs documentation
 
 package AWITPT::NetIP;
 

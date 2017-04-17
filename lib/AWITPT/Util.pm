@@ -24,7 +24,7 @@ use parent 'Exporter';
 use strict;
 use warnings;
 
-our $VERSION = "2.000";
+our $VERSION = 2.01;
 
 # Exporter stuff
 our (@EXPORT,@EXPORT_OK);

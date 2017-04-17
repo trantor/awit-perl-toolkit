@@ -1,5 +1,5 @@
 # AWIT Data Object List Relation
-# Copyright (C) 2014, AllWorldIT
+# Copyright (C) 2014-2017, AllWorldIT
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,13 +43,15 @@ The AWITPT::DataObj::Relation::List class provides a list relation between DataO
 
 
 package AWITPT::DataObj::Relation::List;
-use AWITPT::DataObj::Relation 1.00;
-use base 'AWITPT::DataObj::Relation';
 
 use strict;
 use warnings;
 
-our $VERSION = "1.00";
+use AWITPT::DataObj::Relation 1.01;
+use parent -norequire, 'AWITPT::DataObj::Relation';
+
+
+our $VERSION = 1.01;
 
 
 use AWITPT::DataObj;
@@ -64,17 +66,20 @@ C<AWITPT::DataObj::Relation::List> provides the below methods.
 
 
 
-=head2 init
+=head2 _init
 
-The C<init> method is used internally by AWITPT::DataObj;
+The C<_init> method is used internally by AWITPT::DataObj;
 
 =cut
 
 # Class initialization
-sub init
+sub _init
 {
-	my $self = shift;
+	my ($self,@params) = @_;
 
+
+	# Call parent initialization
+	$self->SUPER::_init(@params);
 
 	# Initialize our child list
 	$self->{'_childList'} = { };
@@ -196,7 +201,7 @@ L<http://gitlab.devlabs.linuxassist.net/awit-frameworks/awit-perl-toolkit/issues
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2014, AllWorldIT
+Copyright (C) 2014-2017, AllWorldIT
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

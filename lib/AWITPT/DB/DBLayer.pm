@@ -1,5 +1,5 @@
 # Common database layer module
-# Copyright (C) 2009-2014, AllWorldIT
+# Copyright (C) 2009-2017, AllWorldIT
 # Copyright (C) 2008, LinuxRulz
 # Copyright (C) 2005-2007 Nigel Kukard  <nkukard@lbsd.net>
 #
@@ -22,12 +22,14 @@
 ## @class AWITPT::DB::DBLayer
 # Database layer module which makes life a bit esier
 package AWITPT::DB::DBLayer;
-use parent 'Exporter';
 
 use strict;
 use warnings;
 
-our $VERSION = '2.000';
+use parent 'Exporter';
+
+
+our $VERSION = 2.01;
 
 # Exporter stuff
 our (@EXPORT);

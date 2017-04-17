@@ -1,5 +1,5 @@
 # Database independent layer module
-# Copyright (C) 2009-2014, AllWorldIT
+# Copyright (C) 2009-2017, AllWorldIT
 # Copyright (C) 2008, LinuxRulz
 # Copyright (C) 2005-2007 Nigel Kukard  <nkukard@lbsd.net>
 #
@@ -28,7 +28,7 @@ package AWITPT::DB::DBILayer;
 use strict;
 use warnings;
 
-our $VERSION = "1.00";
+our $VERSION = 1.01;
 
 use DBI;
 

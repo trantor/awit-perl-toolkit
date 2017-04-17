@@ -1,5 +1,5 @@
 # AWIT Data Object
-# Copyright (C) 2014, AllWorldIT
+# Copyright (C) 2014-2017, AllWorldIT
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,11 +26,12 @@ AWITPT::DataObj - AWITPT Database Data Object
 	# Create a child class
 	#
 	package AWITPT::DataObj::myobject;
-	use AWITPT::DataObj 1.00;
-	use base 'AWITPT::DataObj';
 
 	use strict;
 	use warnings;
+
+	use AWITPT::DataObj 1.00;
+	use parent, -norequire 'AWITPT::DataObj';
 
 	our $VERSION = '1.000';
 
@@ -60,12 +61,15 @@ access to data.
 
 
 package AWITPT::DataObj;
-use parent 'Exporter';
 
 use strict;
 use warnings;
 
-our $VERSION = "3.000";
+use AWITPT::Object 1.01;
+use parent -norequire, 'AWITPT::Object';
+
+
+our $VERSION = 3.01;
 
 our (@EXPORT,@EXPORT_OK);
 @EXPORT = qw(
@@ -137,7 +141,7 @@ use Data::Dumper;
 
 =head1 METHODS
 
-C<AWITPT::DataObj> provides the below manipulation methods.
+C<AWITPT::DataObj> provides the below manipulation methods, together with those inherited from C<AWITPT::Object>.
 
 =cut
 
@@ -145,7 +149,7 @@ C<AWITPT::DataObj> provides the below manipulation methods.
 
 =head2 new
 
-	my $obj = AWITPT::DataObj::myobject->new();
+	my $obj = AWITPT::DataObj::myobject->new([$options]);
 
 The C<new> method is used to instantiate the object.
 
@@ -171,23 +175,7 @@ This property will cause the object to load when a DATAOBJ_PROPERTY_ID is set.
 
 =cut
 
-# Class instantiation
-sub new
-{
-	my ($class,@params) = @_;
-
-	# These are our internal properties
-	my $self = {
-	};
-
-	# Build our class
-	bless($self, $class);
-
-	# And initialize
-	$self->_init(@params);
-
-	return $self;
-}
+# The new() method is inherited from AWITPT::Object.
 
 
 
@@ -1186,6 +1174,9 @@ sub _init
 	my ($self,@params) = @_;
 
 
+	# Call parent to init
+	$self->SUPER::_init(@params);
+
 	# Grab our configuration
 	my $config = $self->config();
 
@@ -1668,7 +1659,7 @@ L<http://gitlab.devlabs.linuxassist.net/awit-frameworks/awit-perl-toolkit/issues
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2014, AllWorldIT
+Copyright (C) 2014-2017, AllWorldIT
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

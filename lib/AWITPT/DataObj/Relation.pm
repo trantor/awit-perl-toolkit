@@ -1,5 +1,5 @@
 # AWIT Data Object Relation Base Class
-# Copyright (C) 2014, AllWorldIT
+# Copyright (C) 2014-2017, AllWorldIT
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,12 +32,15 @@ The AWITPT::DataObj::Relation class provides a base class for relation classes.
 
 
 package AWITPT::DataObj::Relation;
-use parent 'Exporter';
 
 use strict;
 use warnings;
 
-our $VERSION = "1.000";
+use AWITPT::Object 1.01;
+use parent -norequire, 'AWITPT::Object';
+
+
+our $VERSION = 1.01;
 
 our (@EXPORT,@EXPORT_OK);
 @EXPORT = qw(
@@ -66,10 +69,32 @@ The C<new> method is used to instantiate the object, in this case a root relatio
 
 =cut
 
-# Class instantiation
-sub new
+# The new() method is inherited from AWITPT::Object
+
+
+
+=head2 _init
+
+	sub _init
+	{
+		my ($self,@params) = @_;
+
+		$self->SUPER::_init(@params);
+
+		$self->{'_myinternal'} = "hello";
+
+		return $self;
+	}
+
+The internal C<_init> method is overridden in child objects to perform initialization tasks;
+
+=cut
+
+# Object initialization
+sub _init
 {
-	my ($class,$parent,$childClass) = @_;
+	my ($self,@params) = @_;
+	my ($parent,$childClass) = @params;
 
 
 	# Check if we firstly have a parent object
@@ -82,40 +107,15 @@ sub new
 		die "Child class is required for DataObj::Relation";
 	}
 
+	# Call parent initialization
+	$self->SUPER::_init(@params);
+
 	# These are our internal properties
-	my $self = {
-		'_parent' => $parent,
-		'_child' => undef,
-		'_child_class_name' => $childClass
-	};
-
-	# Build our class
-	bless($self, $class);
-
-	# Initialize the object
-	$self->init($parent,$childClass);
+	$self->{'_parent'} = $parent,
+	$self->{'_child'} = undef;
+	$self->{'_child_class_name'} = $childClass;
 
 	return $self;
-}
-
-
-
-=head2 init
-
-	sub init
-	{
-		my $self = shift;
-
-		$self->{'_myinternal'} = "hello";
-	}
-
-The C<init> method is overridden in child objects to perform initialization tasks;
-
-=cut
-
-# Object initialization
-sub init
-{
 }
 
 
@@ -221,7 +221,7 @@ L<http://gitlab.devlabs.linuxassist.net/awit-frameworks/awit-perl-toolkit/issues
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2014, AllWorldIT
+Copyright (C) 2014-2017, AllWorldIT
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

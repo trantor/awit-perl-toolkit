@@ -1,5 +1,5 @@
-# AWIT Database Data Object
-# Copyright (C) 2014, AllWorldIT
+# AWITPT DataObj backend for DBLayer
+# Copyright (C) 2014-2017, AllWorldIT
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,19 +18,20 @@
 
 =head1 NAME
 
-AWITPT::DB::DataObj - AWITPT Database Data Object
+AWITPT::DataObj::Backend::DBLayer - AWITPT DataObj backend for DBLayer
 
 =head1 SYNOPSIS
 
 	#
 	# Create a child class
 	#
-	package AWITPT::DB::DataObj::myobject;
-	use AWITPT::DB::DataObj 1.00;
-	use parent 'AWITPT::DB::DataObj';
+	package DataObj::myobject;
 
 	use strict;
 	use warnings;
+
+	use AWITPT::DataObj::Backend::DBLayer 1.00;
+	use parent, -norequire 'AWITPT::DataObj::Backend::DBLayer';
 
 	our $VERSION = '1.00';
 
@@ -55,22 +56,19 @@ AWITPT::DB::DataObj - AWITPT Database Data Object
 
 =head1 DESCRIPTION
 
-The AWITPT::DB::DataObj class provides an abstraction layer between a data definition and the underlying database, allowing easy
-access to table data.
+The C<AWITPT::DataObj::Backend::DBLayer> class provides an abstraction layer between a data definition and the underlying database, allowing easy
+access to table data. This class inherits all methods from C<AWITPT::DataObj>.
 
 =cut
 
 
-package AWITPT::DB::DataObj;
-use parent 'Exporter';
-
-use AWITPT::DataObj 3.000;
-use base 'AWITPT::DataObj';
+package AWITPT::DataObj::Backend::DBLayer;
 
 use strict;
 use warnings;
 
-our $VERSION = "2.000";
+use AWITPT::DataObj 3.01;
+use parent -norequire, 'AWITPT::DataObj';
 
 our (@ISA,@EXPORT,@EXPORT_OK);
 # Re-export our parents constants
@@ -98,7 +96,7 @@ use Data::Dumper;
 
 =head1 METHODS
 
-C<AWITPT::DB::DataObj> provides the below manipulation methods.
+C<AWITPT::DataObj::Backend::DBLayer> provides the below manipulation methods.
 
 =cut
 
@@ -475,7 +473,7 @@ L<http://gitlab.devlabs.linuxassist.net/awit-frameworks/awit-perl-toolkit/issues
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2014, AllWorldIT
+Copyright (C) 2014-2017, AllWorldIT
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

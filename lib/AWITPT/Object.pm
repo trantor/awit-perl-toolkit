@@ -1,5 +1,5 @@
 # AWIT Object
-# Copyright (C) 2016, AllWorldIT
+# Copyright (C) 2016-2017, AllWorldIT
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ AWITPT::Object - AWITPT Object
 	#
 	package myobject;
 	use AWITPT::Object 1.00;
-	use base 'AWITPT::Object';
+	use parent -norequire, 'AWITPT::Object';
 
 	use strict;
 	use warnings;
@@ -55,12 +55,14 @@ The AWITPT::Object class provides a basic abstraction layer to Perl objects.
 
 
 package AWITPT::Object;
-use parent 'Exporter';
 
 use strict;
 use warnings;
 
-our $VERSION = "1.000";
+use parent 'Exporter';
+
+
+our $VERSION = 1.01;
 
 our (@EXPORT,@EXPORT_OK);
 @EXPORT = qw(
@@ -94,6 +96,7 @@ The C<new> method is used to instantiate the object.
 sub new
 {
 	my ($class,@params) = @_;
+
 
 	# These are our internal properties
 	my $self = {
@@ -156,7 +159,7 @@ L<http://gitlab.devlabs.linuxassist.net/awit-frameworks/awit-perl-toolkit/issues
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2016, AllWorldIT
+Copyright (C) 2016-2017, AllWorldIT
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
