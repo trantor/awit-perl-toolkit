@@ -1,5 +1,5 @@
 # TSQL conversion to PgSQL
-# Copyright (C) 2016, AllWorldIT
+# Copyright (C) 2016-2017, AllWorldIT
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,7 +38,9 @@ package AWITPT::Util::ConvertTSQL::PgSQL;
 use strict;
 use warnings;
 
-use base 'AWITPT::Util::ConvertTSQL';
+use AWITPT::Util::ConvertTSQL 1.01;
+use parent -norequire, 'AWITPT::Util::ConvertTSQL';
+
 
 our $VERSION = "1.000";
 
@@ -119,7 +121,7 @@ L<http://gitlab.devlabs.linuxassist.net/awit-frameworks/awit-perl-toolkit/issues
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2016, AllWorldIT
+Copyright (C) 2016-2017, AllWorldIT
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

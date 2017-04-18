@@ -36,7 +36,7 @@ WriteMakefile(
 
 	'MAN3PODS' => {
 		'lib/AWITPT/DataObj.pm' => '$(INST_MAN3DIR)/AWITPT::DataObj.3',
-		'lib/AWITPT/DB/DataObj.pm' => '$(INST_MAN3DIR)/AWITPT::DB::DataObj.3',
+		'lib/AWITPT/DataObj/Backend/DBLayer.pm' => '$(INST_MAN3DIR)/AWITPT::DataObj::Backend::DBLayer.3',
 		'lib/AWITPT/Util/ConvertTSQL.pm' => '$(INST_MAN3DIR)/AWITPT::Util::ConvertTSQL.3',
 		'lib/AWITPT/Util/ConvertTSQL/client.pm' => '$(INST_MAN3DIR)/AWITPT::Util::ConvertTSQL::client.3',
 		'lib/AWITPT/Util/ConvertTSQL/MySQL.pm' => '$(INST_MAN3DIR)/AWITPT::Util::ConvertTSQL::MySQL.3',

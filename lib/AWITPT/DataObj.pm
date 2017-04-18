@@ -1,5 +1,5 @@
 # AWIT Data Object
-# Copyright (C) 2014, AllWorldIT
+# Copyright (C) 2014-2017, AllWorldIT
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,11 +26,12 @@ AWITPT::DataObj - AWITPT Database Data Object
 	# Create a child class
 	#
 	package AWITPT::DataObj::myobject;
-	use AWITPT::DataObj 1.00;
-	use base 'AWITPT::DataObj';
 
 	use strict;
 	use warnings;
+
+	use AWITPT::DataObj 1.00;
+	use parent, -norequire 'AWITPT::DataObj';
 
 	our $VERSION = '1.000';
 
@@ -60,22 +61,26 @@ access to data.
 
 
 package AWITPT::DataObj;
-use parent 'Exporter';
 
 use strict;
 use warnings;
 
-our $VERSION = "3.000";
+use AWITPT::Object 1.01;
+use parent -norequire, 'AWITPT::Object';
+
+
+our $VERSION = 3.01;
 
 our (@EXPORT,@EXPORT_OK);
 @EXPORT = qw(
 	DATAOBJ_LOADONIDSET
 
-	DATAOBJ_PROPERTY_ALL
 	DATAOBJ_PROPERTY_READONLY
 	DATAOBJ_PROPERTY_NOLOAD
-	DATAOBJ_PROPERTY_ID
 	DATAOBJ_PROPERTY_NOSAVE
+	DATAOBJ_PROPERTY_ID
+	DATAOBJ_PROPERTY_REQUIRED
+	DATAOBJ_PROPERTY_ALL
 
 	DATAOBJ_RELATION_READONLY
 
@@ -100,8 +105,13 @@ use constant {
 	'DATAOBJ_PROPERTY_NOLOAD' => 2,
 	# Do not save this field to DB
 	'DATAOBJ_PROPERTY_NOSAVE' => 4,
-	# Combination of above
+
+	# Combination of READONLY and NOSAVE
 	'DATAOBJ_PROPERTY_ID' => 5,
+
+	# This property must be set before doing a commit
+	'DATAOBJ_PROPERTY_REQUIRED' => 8,
+
 	# Match property
 	'DATAOBJ_PROPERTY_ALL' => 255,
 
@@ -137,7 +147,7 @@ use Data::Dumper;
 
 =head1 METHODS
 
-C<AWITPT::DataObj> provides the below manipulation methods.
+C<AWITPT::DataObj> provides the below manipulation methods, together with those inherited from C<AWITPT::Object>.
 
 =cut
 
@@ -145,7 +155,7 @@ C<AWITPT::DataObj> provides the below manipulation methods.
 
 =head2 new
 
-	my $obj = AWITPT::DataObj::myobject->new();
+	my $obj = AWITPT::DataObj::myobject->new([$options]);
 
 The C<new> method is used to instantiate the object.
 
@@ -171,23 +181,7 @@ This property will cause the object to load when a DATAOBJ_PROPERTY_ID is set.
 
 =cut
 
-# Class instantiation
-sub new
-{
-	my ($class,@params) = @_;
-
-	# These are our internal properties
-	my $self = {
-	};
-
-	# Build our class
-	bless($self, $class);
-
-	# And initialize
-	$self->_init(@params);
-
-	return $self;
-}
+# The new() method is inherited from AWITPT::Object.
 
 
 
@@ -229,19 +223,29 @@ Below is a list of supported options:
 =over
 
 =item *
-B<DATAOBJ_PROPERTY_READONLY>
+B<DATAOBJ_PROPERTY_ID>
 
-Internal use, this property cannot be set
+This is the unique ID property of the object, only ONE of these can be specified!
 
 =item *
 B<DATAOBJ_PROPERTY_NOLOAD>
 
-This property is not loaded from the database
+This property will not be loaded.
 
 =item *
 B<DATAOBJ_PROPERTY_NOSAVE>
 
-This property is not saved to the database
+This property is not saved.
+
+=item *
+B<DATAOBJ_PROPERTY_READONLY>
+
+Ensure this property cannot be set using ->setXXX().
+
+=item *
+B<DATAOBJ_PROPERTY_REQUIRED>
+
+This property must be set before using ->commit().
 
 =back
 
@@ -492,7 +496,6 @@ sub set
 
 	# Check if we should insted do a load if we're have DATAOBJ_LOADONIDSET and we're an ID property
 	if ($self->{'_options'} & DATAOBJ_LOADONIDSET && $property->{'options'} & DATAOBJ_PROPERTY_ID == DATAOBJ_PROPERTY_ID) {
-warn " - - - LOAD ID:".prettyUndef($value);
 		# As this is a object set to load when set, and set as a ID
 		if (!defined($self->load($property->{'name'} => $value))) {
 			return;
@@ -805,7 +808,7 @@ sub asHash
 
 	# Build up reply
 	my %data;
-	foreach my $property ($self->_properties(DATAOBJ_PROPERTY_ALL)) {
+	foreach my $property ($self->_properties()) {
 		# We allow retrieval of data if the get method has been overridden
 		my $method = "get$property";
 		$data{$property} = $self->$method($property);
@@ -1008,7 +1011,7 @@ sub dataLoaded
 
 The C<commit> method is used to commit the record, this means updating it if it exists or inserting it if it does not yet exist.
 
-NOTE: This method must be implemented by child classes.
+NOTE: This method must be implemented by child classes and must call the super class $self->SUPER::commit(@params).
 
 =cut
 
@@ -1017,10 +1020,15 @@ sub commit
 {
 	my $self = shift;
 
+	# Loop with changed and add to data
+	foreach my $propertyName ($self->_propertiesWithOnly(DATAOBJ_PROPERTY_REQUIRED)) {
+		# Check if this property is set
+		if (!defined($self->_get($propertyName))) {
+			$self->_log(DATAOBJ_LOG_ERROR,"Property '%s' must be set before calling commit()",$propertyName);
+		}
+	}
 
-	$self->_log(DATAOBJ_LOG_ERROR,"The 'commit' method needs to be implemented");
-
-	return;
+	return $self;
 }
 
 
@@ -1094,7 +1102,7 @@ sub clone
 	my ($self,@data) = @_;
 
 
-	$self->_log(DATAOBJ_LOG_DEBUG,"Cloning %s",ref($self));
+	$self->_log(DATAOBJ_LOG_DEBUG,"Cloning");
 
 	# Setup our internals
 	my $clone = {
@@ -1186,16 +1194,20 @@ sub _init
 	my ($self,@params) = @_;
 
 
+	# Call parent to init
+	$self->SUPER::_init(@params);
+
 	# Grab our configuration
 	my $config = $self->config();
 
-	$self->_log(DATAOBJ_LOG_DEBUG,"Initializing object '%s'",ref($self));
+	$self->_log(DATAOBJ_LOG_DEBUG,"Initializing object");
 
 	# Set everything blank before we begin
 	$self->{'_options'} = 0;
 	$self->{'_relations'} = { };
 	$self->{'_relations_map'} = { };
-	$self->{'_properties'} = {};
+	$self->{'_properties'} = { };
+	$self->{'_property_id'} = undef;
 
 	# If we have an odd number of params, chop off the first one as our options
 	if (@params % 2) {
@@ -1208,6 +1220,19 @@ sub _init
 		my $propertyConfig = $config->{'properties'}->{$propertyName};
 
 		$self->_log(DATAOBJ_LOG_DEBUG2," - Processing property '%s'",$propertyName);
+
+		# Process options if we have any
+		if (defined(my $options = $propertyConfig->{'options'})) {
+			# Check if this is an ID property, if it is, set the internal attribute
+			if ($options & DATAOBJ_PROPERTY_ID == DATAOBJ_PROPERTY_ID) {
+				if (defined($self->{'_property_id'})) {
+					$self->_log(DATAOBJ_LOG_ERROR,
+						"Multiple properties with DATAOBJ_PROPERTY_ID set, ignoring for property '%s'",$propertyName);
+				} else {
+					$self->{'_property_id'} = $propertyName;
+				}
+			}
+		}
 
 		# Check format of property
 		if (!($propertyName =~ /^[A-Z][A-Za-z0-9]+$/)) {
@@ -1222,9 +1247,7 @@ sub _init
 		my $property = $self->{'_properties'}->{$propertyName};
 
 		# Check if we have validation criteria
-		if (defined($propertyConfig->{'validate'})) {
-			my $validateOptions = $propertyConfig->{'validate'};
-
+		if (defined(my $validateOptions = $propertyConfig->{'validate'})) {
 
 			# Loop with validation options
 			foreach my $validateOption (keys %{$validateOptions}) {
@@ -1312,13 +1335,13 @@ sub _init
 
 			# Check we have everything
 			if (!defined($class)) {
-				$self->_log(DATAOBJ_LOG_ERROR,"DataObj '%s' relation '%s' has no attribute 'class'",ref($self),$relationName);
+				$self->_log(DATAOBJ_LOG_ERROR,"Relation '%s' has no attribute 'class'",$relationName);
 			}
 			if (!defined($type)) {
-				$self->_log(DATAOBJ_LOG_ERROR,"DataObj '%s' relation '%s' has no attribute 'type'",ref($self),$relationName);
+				$self->_log(DATAOBJ_LOG_ERROR,"Relation '%s' has no attribute 'type'",$relationName);
 			}
 			if (!defined($associations)) {
-				$self->_log(DATAOBJ_LOG_ERROR,"DataObj '%s' relation '%s' has no attribute 'associate'",ref($self),$relationName);
+				$self->_log(DATAOBJ_LOG_ERROR,"Relation '%s' has no attribute 'associate'",$relationName);
 			}
 
 			$self->_log(DATAOBJ_LOG_DEBUG2," - Relation '%s' => '%s' [%s]",$relationName,$class,$type);
@@ -1434,6 +1457,17 @@ sub _error
 
 
 
+# Return the DATAOBJ_PROPERTY_ID property
+sub _property_id
+{
+	my $self = shift;
+
+
+	return $self->{'_property_id'};
+}
+
+
+
 # Return the property hash of a given property
 sub _propertyByName
 {
@@ -1452,9 +1486,12 @@ sub _propertyByName
 
 
 # Get properties
+# Without options returns an array of all object properties.
+# If the $match option is specified it is AND'd against the property options, if there is a non 0 result, the property is returned.
+# If the $resultTest option is specified, the return from the AND is tested against this to see if it matches.
 sub _properties
 {
-	my ($self,$match) = @_;
+	my ($self,$match,$resultTest) = @_;
 
 
 	my @properties;
@@ -1463,13 +1500,58 @@ sub _properties
 	foreach my $propertyName (keys %{$self->{'_properties'}}) {
 		my $property = $self->{'_properties'}->{$propertyName};
 
-		# Check if there is no match criteria, or the criteria matches
-		if (!defined($match) || $match == 0 || !($property->{'options'} & ~$match)) {
-			push(@properties,$propertyName);
+		# If there is no match specified, it means all
+		if (!defined($match)) {
+			goto ADD_PROPERTY;
 		}
+
+		# AND the match against the options
+		my $resultBits = $property->{'options'} & $match;
+
+		# If we do infact have a resultTest specified, check it
+		if (defined($resultTest)) {
+			# NK: We cannot add this to the IF above, as we have an else on the above test below
+			if ($resultBits == $resultTest) {
+				goto ADD_PROPERTY;
+			}
+
+		# If we do not have a result test, check if we got something back, if so, its a match
+		} elsif ($resultBits) {
+			goto ADD_PROPERTY;
+		}
+
+		# Nothing matches, so go to next property
+		next;
+
+		# Something matched and we ended up here
+ADD_PROPERTY:
+		push(@properties,$propertyName);
+
 	}
 
 	return @properties;
+}
+
+
+
+# Helper function, Returns items with only an option set
+sub _propertiesWithOnly
+{
+	my ($self,$option) = @_;
+
+
+	return $self->_properties($option,$option);
+}
+
+
+
+# Helper function, returns items without an option set
+sub _propertiesWithout
+{
+	my ($self,$option) = @_;
+
+
+	return $self->_properties(DATAOBJ_PROPERTY_ALL &~ $option);
 }
 
 
@@ -1512,14 +1594,13 @@ sub _set
 		# Grab destination property name
 		my $relationPropertyName = $self->_relationPropertyName($property,$relationName);
 
-warn sprintf("  - THIS IS A RELATION  '%s' [%s => %s] ",$property->{'name'},$relationName,$relationPropertyName);
 		# Check if we actually managed to set something, if not just return undef
 		if (!defined($self->_relation($relationName)->set($relationPropertyName,$value))) {
 			return;
 		}
 	}
 
-	$self->_log(DATAOBJ_LOG_DEBUG,"Property '%s' set to '%s'",$property->{'name'},$value);
+	$self->_log(DATAOBJ_LOG_DEBUG,"Property '%s' set to %s",$property->{'name'},defined($value) ? "'$value'" : '-undef-');
 	$self->{'_data'}->{$property->{'name'}} = $value;
 
 	return $self;
@@ -1536,7 +1617,7 @@ sub _get
 	# No matter what the case, we will still find our property
 	if (my $property = $self->_propertyByName($propertyName)) {
 		my $value = $self->{'_data'}->{$property->{'name'}};
-		$self->_log(DATAOBJ_LOG_DEBUG,"Property '%s' retrieved value '%s'",$propertyName,prettyUndef($value));
+		$self->_log(DATAOBJ_LOG_DEBUG,"Property '%s' retrieved value %s",$propertyName,defined($value) ? "'$value'" : '-undef-');
 		return $value;
 	}
 
@@ -1668,7 +1749,7 @@ L<http://gitlab.devlabs.linuxassist.net/awit-frameworks/awit-perl-toolkit/issues
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2014, AllWorldIT
+Copyright (C) 2014-2017, AllWorldIT
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

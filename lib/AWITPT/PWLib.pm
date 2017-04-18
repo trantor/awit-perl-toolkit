@@ -1,5 +1,4 @@
-# Copyright (c) 2014, AllWorldIT
-# Copyright (c) 2010 Dominik Schulz (dominik.schulz@gauner.org). All rights reserved.
+# Copyright (c) 2014-2017, AllWorldIT
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +16,11 @@
 #
 #
 # Based off of work from http://www.vboxadm.net/
+# Copyright (c) 2010 Dominik Schulz (dominik.schulz@gauner.org). All rights reserved.
 #
+
+# TODO: Needs to inherit AWITPT::Object
+# TODO: Needs documentation
 
 package AWITPT::PWLib;
 use parent 'Exporter';
@@ -25,7 +28,7 @@ use parent 'Exporter';
 use strict;
 use warnings;
 
-our $VERSION = "1.000";
+our $VERSION = 1.01;
 
 our (@EXPORT,@EXPORT_OK);
 @EXPORT = qw(

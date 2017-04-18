@@ -1,5 +1,5 @@
 # TSQL conversion
-# Copyright (C) 2016, AllWorldIT
+# Copyright (C) 2016-2017, AllWorldIT
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,9 +38,11 @@ package AWITPT::Util::ConvertTSQL;
 use strict;
 use warnings;
 
-use base 'AWITPT::Object';
+use AWITPT::Object 1.01;
+use parent -norequire, 'AWITPT::Object';
 
-our $VERSION = "1.000";
+
+our $VERSION = 1.01;
 
 
 
@@ -169,6 +171,9 @@ sub _init
 	my ($self,@params) = @_;
 
 
+	# Call parent initialization
+	$self->SUPER::_init(@params);
+
 	# If we have uneven number of params, the first will be our sub-class
 	if (@params % 2) {
 		my $subClass = shift(@params);
@@ -182,7 +187,7 @@ sub _init
 		};
 		# Check if the eval succeeded
 		if ($@) {
-			warn "AWITPT::Util::ConvertTSQL::$subClass not found";
+			warn "AWITPT::Util::ConvertTSQL::$subClass could not be loaded: $@";
 			return;
 		};
 

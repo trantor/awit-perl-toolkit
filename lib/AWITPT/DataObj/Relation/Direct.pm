@@ -1,5 +1,5 @@
 # AWIT Data Object Direct Relation
-# Copyright (C) 2014, AllWorldIT
+# Copyright (C) 2014-2017, AllWorldIT
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,13 +39,15 @@ The AWITPT::DataObj::Relation::Direct class provides a direct relation between D
 
 
 package AWITPT::DataObj::Relation::Direct;
-use AWITPT::DataObj::Relation 1.000;
-use base 'AWITPT::DataObj::Relation';
 
 use strict;
 use warnings;
 
-our $VERSION = "1.000";
+use AWITPT::DataObj::Relation 1.01;
+use parent -norequire, 'AWITPT::DataObj::Relation';
+
+
+our $VERSION = 1.01;
 
 
 use AWITPT::DataObj;
@@ -93,7 +95,7 @@ L<http://gitlab.devlabs.linuxassist.net/awit-frameworks/awit-perl-toolkit/issues
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2014, AllWorldIT
+Copyright (C) 2014-2017, AllWorldIT
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

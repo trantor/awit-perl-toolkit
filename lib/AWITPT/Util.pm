@@ -24,7 +24,7 @@ use parent 'Exporter';
 use strict;
 use warnings;
 
-our $VERSION = "2.000";
+our $VERSION = 2.01;
 
 # Exporter stuff
 our (@EXPORT,@EXPORT_OK);
@@ -602,7 +602,7 @@ sub parseMacro
 	my $res = "";
 
 	# Loop with macro items
-	while ((my $match = $rest) =~ /([^%]+)?(?:\%{([a-zA-Z_0-9]+)(?:\(([0-9]+)(?:,([0-9]+))?\))?})(.*)/) {
+	while ((my $match = $rest) =~ /([^%]+)?(?:\%\{([a-zA-Z_0-9]+)(?:\(([0-9]+)(?:,([0-9]+))?\))?\})(.*)/) {
 		my ($before,$macro,$n,$m) = ($1,$2,$3,$4);
 		$rest = $5;
 
