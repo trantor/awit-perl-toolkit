@@ -41,6 +41,8 @@ AWITPT::DataObj::Backend::DBLayer - AWITPT DataObj backend for DBLayer
 		my $config = {
 			# Set table name
 			'table' => "testtable",
+			# Optional: set column mapping
+			'table_columns' => { 'Property1' => "property_column", 'Property2' => "property_column2" },
 			# Setup our data definition
 			'properties' => {
 				'ID' => {
@@ -103,6 +105,7 @@ C<AWITPT::DataObj::Backend::DBLayer> provides the below manipulation methods.
 	{
 		retrun {
 			'table' => "mytable"
+			'table_columns' => { 'Property1' => "property_column", 'Property2' => "property_column2" },
 			'properties' => {
 				'Description' => {
 					<OPTIONS>,
@@ -113,7 +116,22 @@ C<AWITPT::DataObj::Backend::DBLayer> provides the below manipulation methods.
 		}
 	}
 
-See L<AWITPT::DataObj> for options, validation and relations.
+See L<AWITPT::DataObj> for additional options, validation and relations.
+
+=head3 Table Name
+
+The table name is specified using the 'table' configuration option.
+
+	'table' => "tableNameHere'
+
+
+=head3 Table Column Mapping
+
+Sometimes properties do not have the same column name. In this case we can specify a property to column mapping.
+
+	'table_columns' => { 'PropertyName' => 'ColumnName' },
+
+NB: Capitalization here is very important!
 
 =back
 
@@ -154,6 +172,11 @@ sub records
 	my $self = shift;
 
 
+	# Get list of columns we need
+	my @columns = $self->_tableProperties2Columns(
+		$self->_propertiesWithout(DATAOBJ_PROPERTY_NOLOAD)
+	);
+
 	# Do select query
 	my ($sth,$numResults) = DBSelectSearch(
 		sprintf("
@@ -162,7 +185,7 @@ sub records
 				FROM
 					%s
 			",
-			join(',',$self->_propertiesWithout(DATAOBJ_PROPERTY_NOLOAD)),
+			join(',',@columns),
 			$self->table()
 		)
 	);
@@ -176,10 +199,12 @@ sub records
 	}
 
 	# Add each row as another record
-	my @records;
-	while (my $row = hashifyLCtoMC($sth->fetchrow_hashref(), $self->_properties())) {
+	my @records = ( );
+	while (my $row = hashifyLCtoMC($sth->fetchrow_hashref(),@columns)) {
+		# Translate hash from row to record
+		my $data = $self->_tableRow2Record($row);
 		# We use clone to clone the current child class, and reset to reset the object entirely
-		my $record = $self->clone()->reset()->_loadHash($row);
+		my $record = $self->clone()->reset()->_loadHash($data);
 		push(@records,$record);
 	}
 
@@ -212,7 +237,19 @@ sub load
 
 	# One param means that we're just grabbing an ID
 	if (@params == 1) {
-		$matches{'ID'} = shift(@params);
+		# Validate the ID property name
+		my $IDProperty = $self->_property_id();
+		if (!defined($IDProperty)) {
+			# Report error and return
+			$self->_error("Invalid invocation of load(), object has no property with option DATAOBJ_PROPERTY_ID");
+			$self->_log(DATAOBJ_LOG_ERROR,
+				"Invalid invocation of load(), object has no property with option DATAOBJ_PROPERTY_ID");
+			return;
+		}
+		# Grab column name for the ID property
+		my $IDColumn = $self->_tableProperty2Column($IDProperty);
+		$matches{$IDColumn} = shift(@params);
+
 	# More params, means we grabbing based on a "search"
 	} else {
 		%matches = @params;
@@ -221,10 +258,18 @@ sub load
 	# Build SQL statement
 	my @whereItems;
 	my @whereValues;
-	foreach my $column (keys %matches) {
+	foreach my $property (keys %matches) {
+		# Grab column name
+		my $column = $self->_tableProperty2Column($property);
+		# Add to where arrays we'll use later
 		push(@whereItems,"$column = ?");
-		push(@whereValues,$matches{$column});
+		push(@whereValues,$matches{$property});
 	}
+
+	# Get list of columns we need
+	my @columns = $self->_tableProperties2Columns(
+		$self->_propertiesWithout(DATAOBJ_PROPERTY_NOLOAD)
+	);
 
 	# Do SQL select
 	my $sth = DBSelect(
@@ -236,7 +281,7 @@ sub load
 				WHERE
 					%s
 			',
-			join(',',$self->_propertiesWithout(DATAOBJ_PROPERTY_NOLOAD)),
+			join(',',@columns),
 			$self->table(),
 			join(' AND ',@whereItems)
 		),
@@ -252,9 +297,12 @@ sub load
 	}
 
 	# Grab row
-	my $row = hashifyLCtoMC($sth->fetchrow_hashref(),$self->_properties());
+	my $row = hashifyLCtoMC($sth->fetchrow_hashref(),@columns);
+	# Translate hash from row to record
+	my $data = $self->_tableRow2Record($row);
 
-	$self->_loadHash($row);
+	# Load the hash into the object
+	$self->_loadHash($data);
 
 	return $self;
 }
@@ -288,11 +336,14 @@ sub commit
 	my %data;
 
 	# Loop with changed and add to data
-	foreach my $propertyName ($self->_propertiesWithout(DATAOBJ_PROPERTY_NOSAVE)) {
+	foreach my $property ($self->_propertiesWithout(DATAOBJ_PROPERTY_NOSAVE)) {
 		# If its a changed item add it to the data we going to pass to the DB
-		if (exists($changed->{$propertyName})) {
-			$self->_log(DATAOBJ_LOG_DEBUG2,"Property '%s' changed, added to commit",$propertyName);
-			$data{$propertyName} = $changed->{$propertyName};
+		if (exists($changed->{$property})) {
+			# Get column name
+			my $column = $self->_tableProperty2Column($property);
+			# Add property data
+			$data{$column} = $changed->{$property};
+			$self->_log(DATAOBJ_LOG_DEBUG2,"Property '%s' changed, column '%s' added to commit",$property,$column);
 		}
 	}
 	# If we have no values which changed, return 0E0
@@ -326,9 +377,13 @@ sub commit
 			return;
 		}
 
-		$self->_log(DATAOBJ_LOG_DEBUG2,"Inserting into table '%s' row ID '%s' with: %s",$self->table(),$res,Dumper(\%data));
-		$self->_set('ID',$res);
+		# Check if we have an ID property
+		if (defined(my $IDProperty = $self->_property_id())) {
+			# If we do set it to $res, which is the LastID returned by the above
+			$self->_set($IDProperty,$res);
+		}
 
+		$self->_log(DATAOBJ_LOG_DEBUG2,"Inserted into table '%s' row ID '%s' with: %s",$self->table(),$res,Dumper(\%data));
 	}
 
 	return $res;
@@ -362,7 +417,7 @@ sub remove
 	# Are we going to remove the ID from this object at the end on success?
 	my $removeID = 0;
 
-	# If we don't have any params, we removing ourselves
+	# If we don't have any params, we are removing ourselves
 	if (!@params) {
 		# We can only remove ourselves if our ID is set
 		my $id = $self->getID();
@@ -371,6 +426,7 @@ sub remove
 			$removeID = 1;
 		} else {
 			$self->_error("Failed to remove object, no ID set");
+			$self->_log(DATAOBJ_LOG_ERROR,"Failed to remove object from database, no ID is set");
 			return;
 		}
 
@@ -386,9 +442,12 @@ sub remove
 	# Build SQL statement
 	my @whereItems;
 	my @whereValues;
-	foreach my $column (keys %matches) {
+	foreach my $property (keys %matches) {
+		# Grab column name
+		my $column = $self->_tableProperty2Column($property);
+		# Add to where arrays we'll use later
 		push(@whereItems,"$column = ?");
-		push(@whereValues,$matches{$column});
+		push(@whereValues,$matches{$property});
 	}
 
 	$self->_log(DATAOBJ_LOG_DEBUG2,"Removing record from table '%s' with: %s",$self->table(),Dumper(\%matches));
@@ -409,7 +468,7 @@ sub remove
 
 	# Make sure we got something back
 	if (!defined($rows)) {
-		$self->_error("Database remove failed: ".AWITPT::DB::DBLayer::error());
+		$self->_error("Database remove failed: %s",AWITPT::DB::DBLayer::error());
 		return;
 	}
 
@@ -447,13 +506,103 @@ sub _init
 		$self->_log(DATAOBJ_LOG_ERROR,"No 'table' defined!");
 		return;
 	}
+
 	# Set the table name
 	$self->{'_table'} = $config->{'table'};
 	$self->_addInternalProperty('_table');
 
+	# Set the table column mapping
+	$self->{'_table_map_property2column'} = $config->{'table_columns'} // { };
+	$self->_addInternalProperty('_table_map_property2column');
+
+	# Create reverse mapping of table columns to property
+	$self->{'_table_map_column2property'} = { };
+	$self->_addInternalProperty('_table_map_column2property');
+	foreach my $property ($self->_properties()) {
+		my $column = $self->_tableProperty2Column($property);
+		$self->{'_table_map_column2property'}->{$column} = $property;
+	}
+
 	return $self;
 }
 
+
+
+# Return table column mapping for a property
+sub _tableProperty2Column
+{
+	my ($self,$property) = @_;
+
+
+	return $self->{'_table_map_property2column'}->{$property} // $property;
+}
+
+
+
+# Return table property mapping for a column
+sub _tableColumn2Property
+{
+	my ($self,$column) = @_;
+
+
+	return $self->{'_table_map_column2property'}->{$column} // $column;
+}
+
+
+
+# Return table columns
+sub _tableProperties2Columns
+{
+	my ($self,@properties) = @_;
+
+
+	my @columns;
+
+	# Retrieve and translate properties into columns
+	foreach my $property (@properties) {
+		push(@columns,$self->_tableProperty2Column($property));
+	}
+
+	return @columns;
+}
+
+
+
+# Return row from a record
+sub _tableRecord2Row
+{
+	my ($self,$record) = @_;
+
+
+	my $row = { };
+
+	# Re-key the hash with property names
+	foreach my $item (keys %{$row}) {
+		my $newKey = $self->_tableProperty2Column($item);
+		$row->{$newKey} = $record->{$item};
+	}
+
+	return $row;
+}
+
+
+
+# Return record from row
+sub _tableRow2Record
+{
+	my ($self,$row) = @_;
+
+
+	my $record = { };
+
+	# Re-key the hash with property names
+	foreach my $item (keys %{$row}) {
+		my $newKey = $self->_tableColumn2Property($item);
+		$record->{$newKey} = $row->{$item};
+	}
+
+	return $record;
+}
 
 
 
