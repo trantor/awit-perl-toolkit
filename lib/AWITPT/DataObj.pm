@@ -496,7 +496,6 @@ sub set
 
 	# Check if we should insted do a load if we're have DATAOBJ_LOADONIDSET and we're an ID property
 	if ($self->{'_options'} & DATAOBJ_LOADONIDSET && $property->{'options'} & DATAOBJ_PROPERTY_ID == DATAOBJ_PROPERTY_ID) {
-warn " - - - LOAD ID:".prettyUndef($value);
 		# As this is a object set to load when set, and set as a ID
 		if (!defined($self->load($property->{'name'} => $value))) {
 			return;
@@ -1023,10 +1022,8 @@ sub commit
 
 	# Loop with changed and add to data
 	foreach my $propertyName ($self->_propertiesWithOnly(DATAOBJ_PROPERTY_REQUIRED)) {
-		warn "BAM1: $propertyName";
 		# Check if this property is set
 		if (!defined($self->_get($propertyName))) {
-			warn "BAM2: $propertyName";
 			$self->_log(DATAOBJ_LOG_ERROR,"Property '%s' must be set before calling commit()",$propertyName);
 		}
 	}
@@ -1597,7 +1594,6 @@ sub _set
 		# Grab destination property name
 		my $relationPropertyName = $self->_relationPropertyName($property,$relationName);
 
-warn sprintf("  - THIS IS A RELATION  '%s' [%s => %s] ",$property->{'name'},$relationName,$relationPropertyName);
 		# Check if we actually managed to set something, if not just return undef
 		if (!defined($self->_relation($relationName)->set($relationPropertyName,$value))) {
 			return;
