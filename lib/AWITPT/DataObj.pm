@@ -1250,9 +1250,7 @@ sub _init
 		my $property = $self->{'_properties'}->{$propertyName};
 
 		# Check if we have validation criteria
-		if (defined($propertyConfig->{'validate'})) {
-			my $validateOptions = $propertyConfig->{'validate'};
-
+		if (defined(my $validateOptions = $propertyConfig->{'validate'})) {
 
 			# Loop with validation options
 			foreach my $validateOption (keys %{$validateOptions}) {
@@ -1507,7 +1505,7 @@ sub _properties
 
 		# If there is no match specified, it means all
 		if (!defined($match)) {
-			goto ADD_PROPERTY;	
+			goto ADD_PROPERTY;
 		}
 
 		# AND the match against the options
@@ -1517,12 +1515,12 @@ sub _properties
 		if (defined($resultTest)) {
 			# NK: We cannot add this to the IF above, as we have an else on the above test below
 			if ($resultBits == $resultTest) {
-				goto ADD_PROPERTY;	
+				goto ADD_PROPERTY;
 			}
 
 		# If we do not have a result test, check if we got something back, if so, its a match
 		} elsif ($resultBits) {
-			goto ADD_PROPERTY;	
+			goto ADD_PROPERTY;
 		}
 
 		# Nothing matches, so go to next property
