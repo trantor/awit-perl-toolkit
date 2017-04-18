@@ -223,6 +223,11 @@ Below is a list of supported options:
 =over
 
 =item *
+B<DATAOBJ_PROPERTY_ID>
+
+This is the unique ID property of the object, only ONE of these can be specified!
+
+=item *
 B<DATAOBJ_PROPERTY_NOLOAD>
 
 This property will not be loaded.
@@ -1204,7 +1209,8 @@ sub _init
 	$self->{'_options'} = 0;
 	$self->{'_relations'} = { };
 	$self->{'_relations_map'} = { };
-	$self->{'_properties'} = {};
+	$self->{'_properties'} = { };
+	$self->{'_property_id'} = undef;
 
 	# If we have an odd number of params, chop off the first one as our options
 	if (@params % 2) {
@@ -1217,6 +1223,19 @@ sub _init
 		my $propertyConfig = $config->{'properties'}->{$propertyName};
 
 		$self->_log(DATAOBJ_LOG_DEBUG2," - Processing property '%s'",$propertyName);
+
+		# Process options if we have any
+		if (defined(my $options = $propertyConfig->{'options'})) {
+			# Check if this is an ID property, if it is, set the internal attribute
+			if ($options & DATAOBJ_PROPERTY_ID == DATAOBJ_PROPERTY_ID) {
+				if (defined($self->{'_property_id'})) {
+					$self->_log(DATAOBJ_LOG_ERROR,
+						"Multiple properties with DATAOBJ_PROPERTY_ID set, ignoring for property '%s'",$propertyName);
+				} else {
+					$self->{'_property_id'} = $propertyName;
+				}
+			}
+		}
 
 		# Check format of property
 		if (!($propertyName =~ /^[A-Z][A-Za-z0-9]+$/)) {
@@ -1439,6 +1458,17 @@ sub _error
 	$self->{'_error'} = $error;
 
 	return;
+}
+
+
+
+# Return the DATAOBJ_PROPERTY_ID property
+sub _property_id
+{
+	my $self = shift;
+
+
+	return $self->{'_property_id'};
 }
 
 
