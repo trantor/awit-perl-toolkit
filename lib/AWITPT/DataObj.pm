@@ -1105,7 +1105,7 @@ sub clone
 	my ($self,@data) = @_;
 
 
-	$self->_log(DATAOBJ_LOG_DEBUG,"Cloning %s",ref($self));
+	$self->_log(DATAOBJ_LOG_DEBUG,"Cloning");
 
 	# Setup our internals
 	my $clone = {
@@ -1203,7 +1203,7 @@ sub _init
 	# Grab our configuration
 	my $config = $self->config();
 
-	$self->_log(DATAOBJ_LOG_DEBUG,"Initializing object '%s'",ref($self));
+	$self->_log(DATAOBJ_LOG_DEBUG,"Initializing object");
 
 	# Set everything blank before we begin
 	$self->{'_options'} = 0;
@@ -1340,13 +1340,13 @@ sub _init
 
 			# Check we have everything
 			if (!defined($class)) {
-				$self->_log(DATAOBJ_LOG_ERROR,"DataObj '%s' relation '%s' has no attribute 'class'",ref($self),$relationName);
+				$self->_log(DATAOBJ_LOG_ERROR,"Relation '%s' has no attribute 'class'",$relationName);
 			}
 			if (!defined($type)) {
-				$self->_log(DATAOBJ_LOG_ERROR,"DataObj '%s' relation '%s' has no attribute 'type'",ref($self),$relationName);
+				$self->_log(DATAOBJ_LOG_ERROR,"Relation '%s' has no attribute 'type'",$relationName);
 			}
 			if (!defined($associations)) {
-				$self->_log(DATAOBJ_LOG_ERROR,"DataObj '%s' relation '%s' has no attribute 'associate'",ref($self),$relationName);
+				$self->_log(DATAOBJ_LOG_ERROR,"Relation '%s' has no attribute 'associate'",$relationName);
 			}
 
 			$self->_log(DATAOBJ_LOG_DEBUG2," - Relation '%s' => '%s' [%s]",$relationName,$class,$type);
