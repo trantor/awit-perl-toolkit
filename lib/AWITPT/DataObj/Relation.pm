@@ -42,12 +42,6 @@ use parent -norequire, 'AWITPT::Object';
 
 our $VERSION = 1.01;
 
-our (@EXPORT,@EXPORT_OK);
-@EXPORT = qw(
-);
-@EXPORT_OK = qw(
-);
-
 
 use AWITPT::DataObj;
 

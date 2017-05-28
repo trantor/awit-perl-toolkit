@@ -1598,6 +1598,8 @@ sub _set
 		if (!defined($self->_relation($relationName)->set($relationPropertyName,$value))) {
 			return;
 		}
+
+		$self->_log(DATAOBJ_LOG_DEBUG,"Relation '%s' with property '%s' was set",$relationName,$relationPropertyName);
 	}
 
 	$self->_log(DATAOBJ_LOG_DEBUG,"Property '%s' set to %s",$property->{'name'},defined($value) ? "'$value'" : '-undef-');
