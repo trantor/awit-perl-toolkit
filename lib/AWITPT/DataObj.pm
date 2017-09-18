@@ -1381,6 +1381,9 @@ sub _init
 	# Reset our internal list of properties, used for cloning
 	$self->{'_internal_properties'} = {};
 
+	# Save a copy of our config
+	$self->{'_config'} = $config;
+
 	# If we still have params, load them
 	if (@params) {
 		$self->loadHash(@params);
