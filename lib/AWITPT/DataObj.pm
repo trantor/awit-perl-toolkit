@@ -161,18 +161,17 @@ The C<new> method is used to instantiate the object.
 
 Data object C<options> can also be specified to customize the objects behavior.
 
-=head3 Options
+=head3 B<$options>
 
 Each object supports options being passed as a parameter to C<new> described below...
 
-	'options' => OPTION1 | OPTION2
+	'options' => OBJ_OPTION1 | OBJ_OPTION2
 
-Below is a list of supported options:
+Below is a list of supported object options:
 
 =over
 
-=item *
-B<DATAOBJ_LOADONIDSET>
+=item B<DATAOBJ_LOADONIDSET>
 
 This property will cause the object to load when a DATAOBJ_PROPERTY_ID is set.
 
@@ -193,9 +192,11 @@ This property will cause the object to load when a DATAOBJ_PROPERTY_ID is set.
 		retrun {
 			'properties' => {
 				'OwnerID' => { }, # No parameters as its pretty much handled by the relation
-				'Description' => {
+				'SomePropertyName' => {
+					'description' => "Description of the item",
 					'validate' => { 'type' => 'text', 'length' => 2 },
 					# 'options' => ... property options can be specified here
+					'example' => "some example value",
 				}
 			},
 			'relations' => {
@@ -212,7 +213,17 @@ This property will cause the object to load when a DATAOBJ_PROPERTY_ID is set.
 The C<config> method is used to return configuration information for the current object, it must be overridden for each object
 created and must return a hashref with the object configuration.
 
-=head3 Property Options
+=head3 B<Property Configuration>
+
+Each property supports a number of options described below...
+
+	'description' => "Description of property"
+	'options' => OPTION1 | OPTION2
+	'validate' => { 'type' => <VALIDATE_TYPE>, <VALIDATION_OPTIONS>... }
+	'example' => "some example value"
+
+
+=head3 B<Property Options>
 
 Each property supports options described below...
 
@@ -222,35 +233,30 @@ Below is a list of supported options:
 
 =over
 
-=item *
-B<DATAOBJ_PROPERTY_ID>
+=item B<DATAOBJ_PROPERTY_ID>
 
 This is the unique ID property of the object, only ONE of these can be specified!
 
-=item *
-B<DATAOBJ_PROPERTY_NOLOAD>
+=item B<DATAOBJ_PROPERTY_NOLOAD>
 
 This property will not be loaded.
 
-=item *
-B<DATAOBJ_PROPERTY_NOSAVE>
+=item B<DATAOBJ_PROPERTY_NOSAVE>
 
 This property is not saved.
 
-=item *
-B<DATAOBJ_PROPERTY_READONLY>
+=item B<DATAOBJ_PROPERTY_READONLY>
 
 Ensure this property cannot be set using ->setXXX().
 
-=item *
-B<DATAOBJ_PROPERTY_REQUIRED>
+=item B<DATAOBJ_PROPERTY_REQUIRED>
 
 This property must be set before using ->commit().
 
 =back
 
 
-=head3 Property Validation
+=head3 B<Property Validation>
 
 Each property supports optional validation criteria described below...
 
@@ -260,86 +266,73 @@ Below is a list of supported validation types:
 
 =over
 
-=item *
-B<text>
+=item B<text>
 
 Validate text.  The C<length> and C<regex> options are supported.
 
 =over
 
-=item *
-B<length>
+=item B<length>
 
 Optional minimum length.
 
-=item *
-B<regex>
+=item B<regex>
 
 Optional regex, eg. qr ( /^ABc/ ).
 
 =back
 
-=item *
-B<username>
+=item B<username>
 
 Validate username, additional parameters in C<params> can be passed for validation.
 
 =over
 
-=item *
-B<params> (arrayref)
+=item B<params> (arrayref)
 
 See L<AWITPT::Util> for options for C<isUsername>.
 
 =back
 
-=item *
-B<email>
+=item B<email>
 
 Validate an email address.
 
-=item *
-B<boolean>
+=item B<boolean>
 
 Validate boolean.
 
-=item *
-B<domain>
+=item B<domain>
 
 Validate domain.
 
-=item *
-B<number>
+=item B<number>
 
 Validate number, additional validation options can be specified using the C<params> option.
 
 =over
 
-=item *
-B<params> (arrayref)
+=item B<params> (arrayref)
 
 See L<AWITPT::Util> for options for C<isNumber>.
 
 =back
 
-=item *
-B<regex>
+=item B<regex>
 
 Validate against a regex. The C<regex> option must be specified with a qr(/..../) regex.
 
-=item *
-B<relation>
+=item B<relation>
 
 Validate using the related object. This calls the related objects validate() method.
 
-=item *
-B<load>
+=item B<load>
 
 Validate by attempting to load the property, this calls the load() method on the current object.
 
 =back
 
-=head3 Relation Options
+=head3 B<Relation Options>
 
 Each relation defined supports a number of options described below...
 
@@ -349,8 +342,7 @@ Below is a list of supported options:
 
 =over
 
-=item *
-B<DATAOBJ_RELATION_READONLY>
+=item B<DATAOBJ_RELATION_READONLY>
 
 The child object will not be created if it does not exist. This only pertains to the 'Direct' relation.
 
