@@ -487,7 +487,7 @@ sub set
 	}
 
 	# Check if we should insted do a load if we're have DATAOBJ_LOADONIDSET and we're an ID property
-	if ($self->{'_options'} & DATAOBJ_LOADONIDSET && $property->{'options'} & DATAOBJ_PROPERTY_ID == DATAOBJ_PROPERTY_ID) {
+	if ($self->{'_options'} & DATAOBJ_LOADONIDSET && ($property->{'options'} & DATAOBJ_PROPERTY_ID) == DATAOBJ_PROPERTY_ID) {
 		# As this is a object set to load when set, and set as a ID
 		if (!defined($self->load($property->{'name'} => $value))) {
 			return;
@@ -1216,7 +1216,7 @@ sub _init
 		# Process options if we have any
 		if (defined(my $options = $propertyConfig->{'options'})) {
 			# Check if this is an ID property, if it is, set the internal attribute
-			if ($options & DATAOBJ_PROPERTY_ID == DATAOBJ_PROPERTY_ID) {
+			if (($options & DATAOBJ_PROPERTY_ID) == DATAOBJ_PROPERTY_ID) {
 				if (defined($self->{'_property_id'})) {
 					$self->_log(DATAOBJ_LOG_ERROR,
 						"Multiple properties with DATAOBJ_PROPERTY_ID set, ignoring for property '%s'",$propertyName);
@@ -1546,7 +1546,9 @@ sub _propertiesWithout
 	my ($self,$option) = @_;
 
 
-	return $self->_properties(DATAOBJ_PROPERTY_ALL &~ $option);
+	my $mask = DATAOBJ_PROPERTY_ALL &~ $option;
+
+	return $self->_properties($mask);
 }
 
 
