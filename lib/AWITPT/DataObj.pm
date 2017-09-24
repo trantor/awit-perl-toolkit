@@ -80,7 +80,9 @@ our (@EXPORT,@EXPORT_OK);
 	DATAOBJ_PROPERTY_NOSAVE
 	DATAOBJ_PROPERTY_ID
 	DATAOBJ_PROPERTY_REQUIRED
+
 	DATAOBJ_PROPERTY_ALL
+	DATAOBJ_PROPERTY_NONE
 
 	DATAOBJ_RELATION_READONLY
 
@@ -112,8 +114,9 @@ use constant {
 	# This property must be set before doing a commit
 	'DATAOBJ_PROPERTY_REQUIRED' => 8,
 
-	# Match property
+	# Masks for property groups
 	'DATAOBJ_PROPERTY_ALL' => 255,
+	'DATAOBJ_PROPERTY_NONE' => 0,
 
 # FIXME - Needs implementing
 	# Relation is read only, it will not create the sub-object
@@ -1548,7 +1551,8 @@ sub _propertiesWithout
 
 	my $mask = DATAOBJ_PROPERTY_ALL &~ $option;
 
-	return $self->_properties($mask);
+	# Return based on property mask, but also return properties with no options set
+	return ($self->_properties($mask),$self->_properties(DATAOBJ_PROPERTY_NONE,DATAOBJ_PROPERTY_NONE));
 }
 
 
